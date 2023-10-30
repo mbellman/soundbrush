@@ -1,1 +1,3 @@
-alert('sup');
+import main from './main';
+
+main();
