@@ -18,6 +18,8 @@ interface PointGroup {
   points: DrawPoint[]
 }
 
+const FADE_OUT_TIME = 1000;
+
 const defaultColors: Color[] = [
   { r: 255, g: 0, b: 0 },
   { r: 0, g: 255, b: 0 },
@@ -58,7 +60,7 @@ function clearUnusedPoints() {
   for (let i = 0; i < pointGroups.length; i++) {
     const { points } = pointGroups[i];
 
-    if (timeSince(points[0]?.time) > 1000) {
+    if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
       points.shift();
       points.shift();
 
@@ -103,13 +105,36 @@ export default function main() {
         const pm2 = points[i - 2];
         const pm1 = points[i - 1];
         const p = points[i];
-        const lifetime = timeSince(p.time) / 1000;
+        const lifetime = timeSince(p.time) / FADE_OUT_TIME;
         const lightness = Math.min(1, 1 - lifetime);
         const radius = Math.max(0, 10 + 30 * lifetime);
-        const colorValue = `rgb(${color.r * lightness}, ${color.g * lightness}, ${color.b * lightness})`;
   
         if (pm2 && pm1) {
-          ctx.strokeStyle = colorValue;
+          const startLifetime = timeSince(pm2.time) / FADE_OUT_TIME;
+          const endLifetime = timeSince(pm1.time) / FADE_OUT_TIME;
+          const startLightness = Math.min(1, 1 - startLifetime);
+          const endLightness = Math.min(1, 1 - endLifetime);
+
+          const direction = {
+            x: p.x - pm1.x,
+            y: p.y - pm1.y
+          };
+
+          const mag = Math.max(1, Math.sqrt(direction.x*direction.x + direction.y * direction.y));
+
+          const unit = {
+            x: direction.x / mag,
+            y: direction.y / mag
+          };
+
+          const gradient = ctx.createLinearGradient(pm2.x - unit.x * radius, pm2.y - unit.y * radius, p.x + unit.x * radius, p.y + unit.y * radius);
+          const startColor = `rgb(${color.r * startLightness}, ${color.g * startLightness}, ${color.b * startLightness})`;
+          const endColor = `rgb(${color.r * endLightness}, ${color.g * endLightness}, ${color.b * endLightness})`;
+
+          gradient.addColorStop(0, startColor);
+          gradient.addColorStop(1, endColor);
+
+          ctx.strokeStyle = gradient;
   
           const midpoint = {
             x: (pm2.x + p.x) / 2,
@@ -134,9 +159,11 @@ export default function main() {
           ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
           ctx.stroke();
   
-          drawCircle(ctx, pm2.x, pm2.y, colorValue, radius);
-          drawCircle(ctx, p.x, p.y, colorValue, radius);
+          // drawCircle(ctx, pm2.x, pm2.y, gradient, radius);
+          drawCircle(ctx, p.x, p.y, gradient, radius);
         } else {
+          const colorValue = `rgb(${color.r * lightness}, ${color.g * lightness}, ${color.b * lightness})`;
+
           drawCircle(ctx, p.x, p.y, colorValue, radius);
         }
       }
