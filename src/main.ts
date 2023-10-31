@@ -7,21 +7,46 @@ interface DrawPoint {
   time: number
 }
 
-const pointGroups: DrawPoint[][] = [];
+interface Color {
+  r: number
+  g: number
+  b: number
+}
+
+interface PointGroup {
+  color: Color
+  points: DrawPoint[]
+}
+
+const defaultColors: Color[] = [
+  { r: 255, g: 0, b: 0 },
+  { r: 0, g: 255, b: 0 },
+  { r: 0, g: 0, b: 255 },
+  { r: 255, g: 0, b: 255 },
+  { r: 0, g: 255, b: 255 },
+  { r: 255, g: 255, b: 255 },
+  { r: 255, g: 255, b: 0 },
+  { r: 255, g: 150, b: 0 }
+];
+
+const pointGroups: PointGroup[] = [];
 
 function timeSince(time: number) {
   return Date.now() - time;
 }
 
 function createNewPointGroup() {
-  pointGroups.push([]);
+  pointGroups.push({
+    color: defaultColors[Math.floor(Math.random() * defaultColors.length)],
+    points: []
+  });
 }
 
 function saveDrawPoint(x: number, y: number) {
-  const currentPointGroup = pointGroups[pointGroups.length - 1];
+  const { points } = pointGroups[pointGroups.length - 1];
 
-  if (currentPointGroup) {
-    currentPointGroup.push({
+  if (points) {
+    points.push({
       x,
       y,
       time: Date.now()
@@ -31,7 +56,7 @@ function saveDrawPoint(x: number, y: number) {
 
 function clearUnusedPoints() {
   for (let i = 0; i < pointGroups.length; i++) {
-    const points = pointGroups[i];
+    const { points } = pointGroups[i];
 
     if (timeSince(points[0]?.time) > 1000) {
       points.shift();
@@ -73,18 +98,18 @@ export default function main() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (const group of pointGroups) {
-      for (let i = 0; i < group.length; i += 2) {
-        const pm2 = group[i - 2];
-        const pm1 = group[i - 1];
-        const p = group[i];
+    for (const { points, color } of pointGroups) {
+      for (let i = 0; i < points.length; i += 2) {
+        const pm2 = points[i - 2];
+        const pm1 = points[i - 1];
+        const p = points[i];
         const lifetime = timeSince(p.time) / 1000;
         const lightness = Math.min(1, 1 - lifetime);
         const radius = Math.max(0, 10 + 30 * lifetime);
-        const color = `rgb(${255 * lightness}, 0, 0)`;
+        const colorValue = `rgb(${color.r * lightness}, ${color.g * lightness}, ${color.b * lightness})`;
   
         if (pm2 && pm1) {
-          ctx.strokeStyle = color;
+          ctx.strokeStyle = colorValue;
   
           const midpoint = {
             x: (pm2.x + p.x) / 2,
@@ -109,10 +134,10 @@ export default function main() {
           ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
           ctx.stroke();
   
-          drawCircle(ctx, pm2.x, pm2.y, color, radius);
-          drawCircle(ctx, p.x, p.y, color, radius);
+          drawCircle(ctx, pm2.x, pm2.y, colorValue, radius);
+          drawCircle(ctx, p.x, p.y, colorValue, radius);
         } else {
-          drawCircle(ctx, p.x, p.y, color, radius);
+          drawCircle(ctx, p.x, p.y, colorValue, radius);
         }
       }
     }
