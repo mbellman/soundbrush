@@ -1,9 +1,12 @@
 import { createCanvas, drawCircle } from './canvas';
 import './styles.scss';
 
-interface DrawPoint {
+interface Vec2 {
   x: number
   y: number
+}
+
+interface DrawPoint extends Vec2 {
   time: number
 }
 
@@ -13,7 +16,7 @@ interface Color {
   b: number
 }
 
-interface PointGroup {
+interface BrushStroke {
   color: Color
   points: DrawPoint[]
 }
@@ -31,21 +34,21 @@ const defaultColors: Color[] = [
   { r: 255, g: 150, b: 0 }
 ];
 
-const pointGroups: PointGroup[] = [];
+const brushStrokes: BrushStroke[] = [];
 
 function timeSince(time: number) {
   return Date.now() - time;
 }
 
-function createNewPointGroup() {
-  pointGroups.push({
+function startNewBrushStroke() {
+  brushStrokes.push({
     color: defaultColors[Math.floor(Math.random() * defaultColors.length)],
     points: []
   });
 }
 
 function saveDrawPoint(x: number, y: number) {
-  const { points } = pointGroups[pointGroups.length - 1];
+  const { points } = brushStrokes[brushStrokes.length - 1];
 
   if (points) {
     points.push({
@@ -56,19 +59,28 @@ function saveDrawPoint(x: number, y: number) {
   }
 }
 
-function clearUnusedPoints() {
-  for (let i = 0; i < pointGroups.length; i++) {
-    const { points } = pointGroups[i];
+function clearUnusedDrawPointsAndBrushStrokes() {
+  for (let i = 0; i < brushStrokes.length; i++) {
+    const { points } = brushStrokes[i];
 
     if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
       points.shift();
       points.shift();
 
       if (points.length === 0) {
-        pointGroups.splice(i, 1);
+        brushStrokes.splice(i, 1);
       }
     }
   }
+}
+
+function normalize({ x, y }: Vec2): Vec2 {
+  const magnitude = Math.max(1, Math.sqrt(x*x + y*y));
+
+  return {
+    x: x / magnitude,
+    y: y / magnitude
+  };
 }
 
 export default function main() {
@@ -81,7 +93,7 @@ export default function main() {
   document.addEventListener('mousedown', () => {
     drawing = true;
 
-    createNewPointGroup();
+    startNewBrushStroke();
   });
 
   document.addEventListener('mouseup', () => drawing = false);
@@ -97,10 +109,13 @@ export default function main() {
       return;
     }
 
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Clear the screen
+    {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-    for (const { points, color } of pointGroups) {
+    for (const { points, color } of brushStrokes) {
       for (let i = 0; i < points.length; i += 2) {
         const pm2 = points[i - 2];
         const pm1 = points[i - 1];
@@ -111,23 +126,16 @@ export default function main() {
   
         if (pm2 && pm1) {
           const startLifetime = timeSince(pm2.time) / FADE_OUT_TIME;
-          const endLifetime = timeSince(pm1.time) / FADE_OUT_TIME;
+          const endLifetime = timeSince(p.time) / FADE_OUT_TIME;
           const startLightness = Math.min(1, 1 - startLifetime);
           const endLightness = Math.min(1, 1 - endLifetime);
 
-          const direction = {
+          const { x: dx, y: dy } = normalize({
             x: p.x - pm1.x,
             y: p.y - pm1.y
-          };
+          });
 
-          const mag = Math.max(1, Math.sqrt(direction.x*direction.x + direction.y * direction.y));
-
-          const unit = {
-            x: direction.x / mag,
-            y: direction.y / mag
-          };
-
-          const gradient = ctx.createLinearGradient(pm2.x - unit.x * radius, pm2.y - unit.y * radius, p.x + unit.x * radius, p.y + unit.y * radius);
+          const gradient = ctx.createLinearGradient(pm2.x - dx * radius, pm2.y - dy * radius, p.x + dx * radius, p.y + dy * radius);
           const startColor = `rgb(${color.r * startLightness}, ${color.g * startLightness}, ${color.b * startLightness})`;
           const endColor = `rgb(${color.r * endLightness}, ${color.g * endLightness}, ${color.b * endLightness})`;
 
@@ -158,8 +166,7 @@ export default function main() {
           ctx.moveTo(pm2.x, pm2.y);
           ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
           ctx.stroke();
-  
-          // drawCircle(ctx, pm2.x, pm2.y, gradient, radius);
+
           drawCircle(ctx, p.x, p.y, gradient, radius);
         } else {
           const colorValue = `rgb(${color.r * lightness}, ${color.g * lightness}, ${color.b * lightness})`;
@@ -169,7 +176,7 @@ export default function main() {
       }
     }
 
-    clearUnusedPoints();
+    clearUnusedDrawPointsAndBrushStrokes();
 
     requestAnimationFrame(render);
   }
