@@ -22,10 +22,10 @@ export function createCanvas() {
   return canvas;
 }
 
-export function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+export function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, radius: number) {
   ctx.fillStyle = color;
 
   ctx.beginPath();
-  ctx.arc(x, y, 20, 0, Math.PI * 2);
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
 }

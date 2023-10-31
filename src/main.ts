@@ -41,13 +41,13 @@ export default function main() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.lineWidth = 40;
-
     for (let i = 0; i < recentPoints.length; i += 2) {
       const pm2 = recentPoints[i - 2];
       const pm1 = recentPoints[i - 1];
       const p = recentPoints[i];
-      const lightness = Math.min(1, 1 - timeSince(p.time) / 1000);
+      const lifetime = timeSince(p.time) / 1000;
+      const lightness = Math.min(1, 1 - lifetime);
+      const radius = Math.max(0, 10 + 30 * lifetime);
 
       const color = `rgb(${255 * lightness}, 0, 0)`;
 
@@ -70,19 +70,22 @@ export default function main() {
         control.x += midpoint.x;
         control.y += midpoint.y;
 
+        ctx.lineWidth = radius * 2;
+
         ctx.beginPath();
         ctx.moveTo(pm2.x, pm2.y);
         ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
         ctx.stroke();
 
-        drawCircle(ctx, pm2.x, pm2.y, color);
-        drawCircle(ctx, p.x, p.y, color);
+        drawCircle(ctx, pm2.x, pm2.y, color, radius);
+        drawCircle(ctx, p.x, p.y, color, radius);
       } else {
-        drawCircle(ctx, p.x, p.y, color);
+        drawCircle(ctx, p.x, p.y, color, radius);
       }
     }
 
     if (timeSince(recentPoints[0]?.time) > 1000) {
+      recentPoints.shift();
       recentPoints.shift();
     }
 
