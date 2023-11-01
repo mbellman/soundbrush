@@ -1,7 +1,7 @@
 import { createCanvas } from './canvas';
 import { render, saveDrawPoint, startNewBrushStroke } from './visuals';
+import { handleSounds, startNewSound, stopCurrentSound } from './audio';
 import './styles.scss';
-import { createTone, stopTone } from './audio';
 
 export default function main() {
   const canvas = createCanvas();
@@ -10,20 +10,17 @@ export default function main() {
   let drawing = false;
   let running = true;
 
-  let tone: OscillatorNode;
-
   document.addEventListener('mousedown', () => {
     drawing = true;
 
     startNewBrushStroke();
-
-    tone = createTone();
+    startNewSound();
   });
 
   document.addEventListener('mouseup', () => {
     drawing = false;
 
-    stopTone(tone);
+    stopCurrentSound();
   });
 
   document.addEventListener('mousemove', e => {
@@ -38,6 +35,7 @@ export default function main() {
     }
 
     render(canvas, ctx);
+    handleSounds();
 
     requestAnimationFrame(loop);
   }

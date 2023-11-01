@@ -1,5 +1,6 @@
 import { drawCircle } from './canvas';
 import { FADE_OUT_TIME } from './constants';
+import { timeSince } from './utilities';
 
 interface Vec2 {
   x: number
@@ -44,13 +45,6 @@ function normalize({ x, y }: Vec2): Vec2 {
     x: x / magnitude,
     y: y / magnitude
   };
-}
-
-/**
- * @internal
- */
-function timeSince(time: number) {
-  return Date.now() - time;
 }
 
 export function startNewBrushStroke() {
