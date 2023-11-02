@@ -2,10 +2,10 @@ import { FADE_OUT_TIME } from './constants';
 import { timeSince } from './utilities';
 
 let context: AudioContext = null;
-let gain: GainNode = null;
+let compressor: DynamicsCompressorNode = null;
 
 interface Sound {
-  node: AudioScheduledSourceNode
+  node: OscillatorNode
   _gain: GainNode
   _startTime: number
   _endTime: number
@@ -16,35 +16,55 @@ let currentSound: Sound = null;
 
 const TUNING_CONSTANT = Math.pow(2, 1/12);
 
+/**
+ * @internal
+ */
 function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - 49) * 440;
 }
 
+const synths = {
+  electricPiano: new Float32Array([ 0, 1, 0, 0, 1 ]),
+  bass: new Float32Array([ 0, 1, 0.8, 0.2, 0.02 ]),
+};
+
+/**
+ * @internal
+ */
+function createWaveForm(): PeriodicWave {
+  const { electricPiano } = synths;
+  const imaginary = electricPiano.map(() => 0);
+
+  return context.createPeriodicWave(electricPiano, imaginary);
+}
+
+/**
+ * @internal
+ */
 function createSound(): Sound {
   if (!context) {
+    // Set up the audio context if it isn't already created
     context = new AudioContext({
       sampleRate: 44100
     });
 
-    gain = new GainNode(context);
+    compressor = context.createDynamicsCompressor();
 
-    gain.connect(context.destination);
+    compressor.threshold.value = -50;
+    
+    compressor.connect(context.destination);
   }
 
-  const node = context.createOscillator();
   const _gain = context.createGain();
+  const node = context.createOscillator();
 
-  const real = new Float32Array([ 0, 1 ]);
-  const imaginary = new Float32Array([ 0, 0 ]);
-  const wave = context.createPeriodicWave(real, imaginary);
-
-  node.frequency.value = getFrequency(49);
+  node.frequency.value = getFrequency(30 + Math.round(Math.random() * 20));
   
-  node.setPeriodicWave(wave);
+  node.setPeriodicWave(createWaveForm());
   node.start(context.currentTime);
   node.connect(_gain);
 
-  _gain.connect(context.destination);
+  _gain.connect(compressor);
 
   return {
     node,
@@ -54,6 +74,9 @@ function createSound(): Sound {
   };
 }
 
+/**
+ * @internal
+ */
 function stopSound(sound: Sound) {
   sound.node.stop(context.currentTime);
   sound.node.disconnect();
