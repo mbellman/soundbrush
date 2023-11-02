@@ -14,6 +14,12 @@ interface Sound {
 const sounds: Sound[] = [];
 let currentSound: Sound = null;
 
+const TUNING_CONSTANT = Math.pow(2, 1/12);
+
+function getFrequency(note: number) {
+  return Math.pow(TUNING_CONSTANT, note - 49) * 440;
+}
+
 function createSound(): Sound {
   if (!context) {
     context = new AudioContext({
@@ -27,9 +33,14 @@ function createSound(): Sound {
 
   const node = context.createOscillator();
   const _gain = context.createGain();
+
+  const real = new Float32Array([ 0, 1 ]);
+  const imaginary = new Float32Array([ 0, 0 ]);
+  const wave = context.createPeriodicWave(real, imaginary);
+
+  node.frequency.value = getFrequency(49);
   
-  node.frequency.value = 440;
-  
+  node.setPeriodicWave(wave);
   node.start(context.currentTime);
   node.connect(_gain);
 
