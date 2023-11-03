@@ -1,4 +1,5 @@
 import { FADE_OUT_TIME, TUNING_CONSTANT } from './constants';
+import { timeSince } from './utilities';
 
 let context: AudioContext = null;
 let compressor: DynamicsCompressorNode = null;
@@ -13,6 +14,13 @@ interface Sound {
 const sounds: Sound[] = [];
 let currentSound: Sound = null;
 
+const synths = {
+  electricPiano: new Float32Array([ 0, 1, 0, 0, 1 ]),
+  bass: new Float32Array([ 0, 1, 0.8, 0.2, 0.02 ]),
+};
+
+type Instrument = keyof typeof synths
+
 /**
  * @internal
  */
@@ -20,54 +28,53 @@ function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - 49) * 440;
 }
 
-const synths = {
-  electricPiano: new Float32Array([ 0, 1, 0, 0, 1 ]),
-  bass: new Float32Array([ 0, 1, 0.8, 0.2, 0.02 ]),
-};
-
 /**
  * @internal
  */
-function createWaveForm(): PeriodicWave {
-  const instrument = synths.electricPiano;
-  const imaginary = instrument.map(() => 0);
+function initializeContextAndGlobalNodes() {
+  context = new AudioContext({
+    sampleRate: 44100
+  });
 
-  return context.createPeriodicWave(instrument, imaginary);
+  compressor = context.createDynamicsCompressor();
+
+  compressor.threshold.value = -50;
+  compressor.knee.value = 0;
+  compressor.ratio.value = 5;
+  compressor.release.value = 0.5;
+  
+  compressor.connect(context.destination);
 }
 
 /**
  * @internal
  */
-function createSound(): Sound {
+function createWaveForm(instrument: Instrument): PeriodicWave {
+  const real = synths[instrument];
+  const imaginary = real.map(() => 0);
+
+  return context.createPeriodicWave(real, imaginary);
+}
+
+/**
+ * @internal
+ */
+function createSound(instrument: Instrument, note: number): Sound {
   if (!context) {
-    // Set up the audio context if it isn't already created
-    context = new AudioContext({
-      sampleRate: 44100
-    });
-
-    compressor = context.createDynamicsCompressor();
-
-    compressor.threshold.value = -50;
-    compressor.knee.value = 0;
-    compressor.ratio.value = 20;
-    compressor.release.value = 1;
-    
-    compressor.connect(context.destination);
+    initializeContextAndGlobalNodes();
   }
 
   const _gain = context.createGain();
   const node = context.createOscillator();
 
-  node.frequency.value = getFrequency(30 + Math.round(Math.random() * 20));
+  node.frequency.value = getFrequency(note);
   
-  node.setPeriodicWave(createWaveForm());
+  node.setPeriodicWave(createWaveForm(instrument));
   node.start(context.currentTime);
   node.connect(_gain);
 
   _gain.gain.value = 0;
-
-  _gain.gain.linearRampToValueAtTime(0, context.currentTime);
-  _gain.gain.linearRampToValueAtTime(1, context.currentTime + 0.1);
+  _gain.gain.linearRampToValueAtTime(1, context.currentTime + 0.01);
 
   _gain.connect(compressor);
 
@@ -96,8 +103,8 @@ function stopSound(sound: Sound) {
   sound._gain.disconnect();
 }
 
-export function startNewSound() {
-  const sound = createSound();
+export function startNewSound(instrument: Instrument, note: number) {
+  const sound = createSound(instrument, note);
 
   currentSound = sound;
 
@@ -117,9 +124,9 @@ export function stopCurrentSound() {
 export function handleSounds() {
   for (let i = 0; i < sounds.length; i++) {
     const sound = sounds[i];
-    const ended = sound._endTime > -1;
+    const ended = sound._endTime > -1 && timeSince(sound._endTime) > FADE_OUT_TIME;
 
-    if (ended && sound._gain.gain.value < 0.0001) {
+    if (ended) {
       stopSound(sound);
 
       if (sound === currentSound) {

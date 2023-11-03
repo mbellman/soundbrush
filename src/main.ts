@@ -20,8 +20,10 @@ export default function main() {
       y: e.clientY
     };
 
+    const note = 30 + Math.round(Math.random() * 20);
+
     startNewBrushStroke();
-    startNewSound();
+    startNewSound('electricPiano', note);
   });
 
   document.addEventListener('mouseup', () => {
