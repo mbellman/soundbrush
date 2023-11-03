@@ -1,5 +1,4 @@
-import { FADE_OUT_TIME } from './constants';
-import { timeSince } from './utilities';
+import { FADE_OUT_TIME, TUNING_CONSTANT } from './constants';
 
 let context: AudioContext = null;
 let compressor: DynamicsCompressorNode = null;
@@ -13,8 +12,6 @@ interface Sound {
 
 const sounds: Sound[] = [];
 let currentSound: Sound = null;
-
-const TUNING_CONSTANT = Math.pow(2, 1/12);
 
 /**
  * @internal
@@ -32,10 +29,10 @@ const synths = {
  * @internal
  */
 function createWaveForm(): PeriodicWave {
-  const { electricPiano } = synths;
-  const imaginary = electricPiano.map(() => 0);
+  const instrument = synths.electricPiano;
+  const imaginary = instrument.map(() => 0);
 
-  return context.createPeriodicWave(electricPiano, imaginary);
+  return context.createPeriodicWave(instrument, imaginary);
 }
 
 /**
@@ -51,6 +48,9 @@ function createSound(): Sound {
     compressor = context.createDynamicsCompressor();
 
     compressor.threshold.value = -50;
+    compressor.knee.value = 0;
+    compressor.ratio.value = 20;
+    compressor.release.value = 1;
     
     compressor.connect(context.destination);
   }
@@ -64,6 +64,11 @@ function createSound(): Sound {
   node.start(context.currentTime);
   node.connect(_gain);
 
+  _gain.gain.value = 0;
+
+  _gain.gain.linearRampToValueAtTime(0, context.currentTime);
+  _gain.gain.linearRampToValueAtTime(1, context.currentTime + 0.1);
+
   _gain.connect(compressor);
 
   return {
@@ -72,6 +77,14 @@ function createSound(): Sound {
     _startTime: Date.now(),
     _endTime: -1
   };
+}
+
+/**
+ * @internal
+ */
+function fadeOutSound(sound: Sound) {
+  currentSound._gain.gain.value = currentSound._gain.gain.value;
+  currentSound._gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT_TIME / 1000);
 }
 
 /**
@@ -91,19 +104,22 @@ export function startNewSound() {
   sounds.push(currentSound);
 }
 
+export function setCurrentSoundVolume(volume: number) {
+  // @todo
+}
+
 export function stopCurrentSound() {
   currentSound._endTime = Date.now();
+
+  fadeOutSound(currentSound);
 }
 
 export function handleSounds() {
   for (let i = 0; i < sounds.length; i++) {
     const sound = sounds[i];
     const ended = sound._endTime > -1;
-    const fadeout = ended ? timeSince(sound._endTime) / FADE_OUT_TIME : 0;
 
-    sound._gain.gain.value = 1 - fadeout;
-
-    if (fadeout >= 1) {
+    if (ended && sound._gain.gain.value < 0.0001) {
       stopSound(sound);
 
       if (sound === currentSound) {

@@ -1,11 +1,7 @@
 import { drawCircle } from './canvas';
 import { FADE_OUT_TIME } from './constants';
+import { Vec2 } from './types';
 import { timeSince } from './utilities';
-
-interface Vec2 {
-  x: number
-  y: number
-}
 
 interface DrawPoint extends Vec2 {
   time: number

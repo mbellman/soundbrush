@@ -1,6 +1,7 @@
 import { createCanvas } from './canvas';
 import { render, saveDrawPoint, startNewBrushStroke } from './visuals';
-import { handleSounds, startNewSound, stopCurrentSound } from './audio';
+import { handleSounds, setCurrentSoundVolume, startNewSound, stopCurrentSound } from './audio';
+import { Vec2 } from './types';
 import './styles.scss';
 
 export default function main() {
@@ -9,9 +10,15 @@ export default function main() {
 
   let drawing = false;
   let running = true;
+  let lastMouse: Vec2;
 
-  document.addEventListener('mousedown', () => {
+  document.addEventListener('mousedown', e => {
     drawing = true;
+ 
+    lastMouse = {
+      x: e.clientX,
+      y: e.clientY
+    };
 
     startNewBrushStroke();
     startNewSound();
@@ -26,6 +33,17 @@ export default function main() {
   document.addEventListener('mousemove', e => {
     if (drawing) {
       saveDrawPoint(e.clientX, e.clientY);
+
+      const delta: Vec2 = {
+        x: e.clientX - lastMouse.x,
+        y: e.clientY - lastMouse.y
+      };
+
+      // @todo use mouse speed to control sound behavior
+      const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
+
+      lastMouse.x = e.clientX;
+      lastMouse.y = e.clientY;
     }
   });
   
