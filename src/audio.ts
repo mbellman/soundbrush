@@ -13,6 +13,7 @@ interface Sound {
 
 const sounds: Sound[] = [];
 let currentSound: Sound = null;
+let currentSoundBaseFrequency: number = null;
 
 const synths = {
   electricPiano: new Float32Array([ 0, 1, 0, 0, 1 ]),
@@ -68,6 +69,7 @@ function createSound(instrument: Instrument, note: number): Sound {
   const node = context.createOscillator();
 
   node.frequency.value = getFrequency(note);
+  currentSoundBaseFrequency = node.frequency.value;
   
   node.setPeriodicWave(createWaveForm(instrument));
   node.start(context.currentTime);
@@ -111,8 +113,15 @@ export function startNewSound(instrument: Instrument, note: number) {
   sounds.push(currentSound);
 }
 
-export function setCurrentSoundVolume(volume: number) {
-  // @todo
+export function modulateCurrentSound(modulation: number) {
+  const unitModulation = Math.sin(context.currentTime * 50);
+  const modulationFactor = modulation * Math.min(1, timeSince(currentSound._startTime) / 1000);
+
+  currentSound.node.frequency.value = currentSoundBaseFrequency + unitModulation * modulationFactor;
+}
+
+export function stopModulatingCurrentSound() {
+  currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
 }
 
 export function stopCurrentSound() {

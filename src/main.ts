@@ -1,6 +1,6 @@
 import { createCanvas } from './canvas';
 import { render, saveDrawPoint, startNewBrushStroke } from './visuals';
-import { handleSounds, setCurrentSoundVolume, startNewSound, stopCurrentSound } from './audio';
+import { handleSounds, modulateCurrentSound, startNewSound, stopCurrentSound, stopModulatingCurrentSound } from './audio';
 import { Vec2 } from './types';
 import './styles.scss';
 
@@ -26,12 +26,6 @@ export default function main() {
     startNewSound('electricPiano', note);
   });
 
-  document.addEventListener('mouseup', () => {
-    drawing = false;
-
-    stopCurrentSound();
-  });
-
   document.addEventListener('mousemove', e => {
     if (drawing) {
       saveDrawPoint(e.clientX, e.clientY);
@@ -43,10 +37,20 @@ export default function main() {
 
       // @todo use mouse speed to control sound behavior
       const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
+      const modulation = Math.min(5, mouseSpeed);
+
+      modulateCurrentSound(modulation);
 
       lastMouse.x = e.clientX;
       lastMouse.y = e.clientY;
     }
+  });
+
+  document.addEventListener('mouseup', () => {
+    drawing = false;
+
+    stopModulatingCurrentSound();
+    stopCurrentSound();
   });
   
   function loop() {
