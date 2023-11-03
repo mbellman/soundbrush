@@ -1,8 +1,20 @@
 import { createCanvas } from './canvas';
-import { noteToColor, render, saveDrawPoint, startNewBrushStroke } from './visuals';
+import { noteToColor, render, saveDrawPoint, createNewBrushStroke } from './visuals';
 import { handleSounds, modulateCurrentSound, setCurrentSoundNote, startNewSound, stopCurrentSound, stopModulatingCurrentSound } from './audio';
 import { Vec2 } from './types';
 import './styles.scss';
+
+/**
+ * @internal
+ */
+function handleDrawAction(x: number, y: number) {
+  const divisions = 20;
+  const noteOffset = Math.floor(divisions * (1 - y / window.innerHeight));
+  const note = 30 + noteOffset;
+
+  setCurrentSoundNote(note);
+  saveDrawPoint(x, y, noteToColor(note));
+}
 
 export default function main() {
   const canvas = createCanvas();
@@ -20,12 +32,8 @@ export default function main() {
       y: e.clientY
     };
 
-    const divisions = 20;
-    const noteOffset = Math.floor(divisions * (1 - e.clientY / window.innerHeight));
-    const note = 30 + noteOffset;
-
-    startNewBrushStroke();
-    startNewSound('electricPiano', note);
+    createNewBrushStroke();
+    startNewSound('electricPiano', 0);
   });
 
   document.addEventListener('mousemove', e => {
@@ -37,15 +45,9 @@ export default function main() {
 
       // @todo use mouse speed to control sound behavior
       const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
-      const modulation = Math.min(5, mouseSpeed);
-
-      const divisions = 20;
-      const noteOffset = Math.floor(divisions * (1 - e.clientY / window.innerHeight));
-      const note = 30 + noteOffset;
+      const modulation = Math.min(5, mouseSpeed * 10);
 
       modulateCurrentSound(modulation);
-      setCurrentSoundNote(note);
-      saveDrawPoint(e.clientX, e.clientY, noteToColor(note));
 
       lastMouse.x = e.clientX;
       lastMouse.y = e.clientY;
@@ -62,6 +64,10 @@ export default function main() {
   function loop() {
     if (!running) {
       return;
+    }
+
+    if (drawing) {
+      handleDrawAction(lastMouse.x, lastMouse.y);
     }
 
     render(canvas, ctx);

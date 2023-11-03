@@ -51,14 +51,16 @@ export function noteToColor(note: number): Color {
   return noteToColorMap[note % 12];
 }
 
-export function startNewBrushStroke() {
+export function createNewBrushStroke(): BrushStroke {
   brushStrokes.push({
     points: []
   });
+
+  return brushStrokes[brushStrokes.length - 1];
 }
 
 export function saveDrawPoint(x: number, y: number, color: Color) {
-  const { points } = brushStrokes[brushStrokes.length - 1];
+  const { points } = brushStrokes[brushStrokes.length - 1] || createNewBrushStroke();
 
   if (points) {
     points.push({
@@ -142,7 +144,7 @@ export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
         ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
         ctx.stroke();
 
-        drawCircle(ctx, p.x, p.y, gradient, radius);
+        drawCircle(ctx, p.x, p.y, endColor, radius);
       } else {
         const colorValue = `rgb(${p.color.r * lightness}, ${p.color.g * lightness}, ${p.color.b * lightness})`;
 
