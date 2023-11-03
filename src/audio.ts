@@ -124,6 +124,11 @@ export function stopModulatingCurrentSound() {
   currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
 }
 
+export function setCurrentSoundNote(note: number) {
+  currentSound.node.frequency.value = getFrequency(note);
+  currentSoundBaseFrequency = currentSound.node.frequency.value;
+}
+
 export function stopCurrentSound() {
   currentSound._endTime = Date.now();
 

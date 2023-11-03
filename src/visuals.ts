@@ -3,31 +3,35 @@ import { FADE_OUT_TIME } from './constants';
 import { Vec2 } from './types';
 import { timeSince } from './utilities';
 
-interface DrawPoint extends Vec2 {
-  time: number
-}
-
 interface Color {
   r: number
   g: number
   b: number
 }
 
-interface BrushStroke {
+interface DrawPoint extends Vec2 {
+  time: number
   color: Color
+}
+
+interface BrushStroke {
   points: DrawPoint[]
 }
 
-const defaultColors: Color[] = [
-  { r: 255, g: 0, b: 0 },
-  { r: 0, g: 255, b: 0 },
-  { r: 0, g: 0, b: 255 },
-  { r: 255, g: 0, b: 255 },
-  { r: 0, g: 255, b: 255 },
-  { r: 255, g: 255, b: 255 },
-  { r: 255, g: 255, b: 0 },
-  { r: 255, g: 150, b: 0 }
-];
+const noteToColorMap: Record<number, Color> = {
+  0: { r: 255, g: 0, b: 0 },
+  1: { r: 255, g: 100, b: 0 },
+  2: { r: 255, g: 200, b: 0 },
+  3: { r: 0, g: 255, b: 100 },
+  4: { r: 0, g: 255, b: 200 },
+  5: { r: 0, g: 200, b: 255 },
+  6: { r: 0, g: 100, b: 255 },
+  7: { r: 0, g: 0, b: 255 },
+  8: { r: 100, g: 0, b: 255 },
+  9: { r: 200, g: 0, b: 255 },
+  10: { r: 255, g: 0, b: 255 },
+  11: { r: 255, g: 0, b: 150 }
+};
 
 const brushStrokes: BrushStroke[] = [];
 
@@ -43,21 +47,25 @@ function normalize({ x, y }: Vec2): Vec2 {
   };
 }
 
+export function noteToColor(note: number): Color {
+  return noteToColorMap[note % 12];
+}
+
 export function startNewBrushStroke() {
   brushStrokes.push({
-    color: defaultColors[Math.floor(Math.random() * defaultColors.length)],
     points: []
   });
 }
 
-export function saveDrawPoint(x: number, y: number) {
+export function saveDrawPoint(x: number, y: number, color: Color) {
   const { points } = brushStrokes[brushStrokes.length - 1];
 
   if (points) {
     points.push({
       x,
       y,
-      time: Date.now()
+      time: Date.now(),
+      color
     });
   }
 }
@@ -82,7 +90,7 @@ export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (const { points, color } of brushStrokes) {
+  for (const { points } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
       const pm1 = points[i - 1];
@@ -103,8 +111,8 @@ export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
         });
 
         const gradient = ctx.createLinearGradient(pm2.x - dx * radius, pm2.y - dy * radius, p.x + dx * radius, p.y + dy * radius);
-        const startColor = `rgb(${color.r * startLightness}, ${color.g * startLightness}, ${color.b * startLightness})`;
-        const endColor = `rgb(${color.r * endLightness}, ${color.g * endLightness}, ${color.b * endLightness})`;
+        const startColor = `rgb(${pm2.color.r * startLightness}, ${pm2.color.g * startLightness}, ${pm2.color.b * startLightness})`;
+        const endColor = `rgb(${p.color.r * endLightness}, ${p.color.g * endLightness}, ${p.color.b * endLightness})`;
 
         gradient.addColorStop(0, startColor);
         gradient.addColorStop(1, endColor);
@@ -136,7 +144,7 @@ export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
 
         drawCircle(ctx, p.x, p.y, gradient, radius);
       } else {
-        const colorValue = `rgb(${color.r * lightness}, ${color.g * lightness}, ${color.b * lightness})`;
+        const colorValue = `rgb(${p.color.r * lightness}, ${p.color.g * lightness}, ${p.color.b * lightness})`;
 
         drawCircle(ctx, p.x, p.y, colorValue, radius);
       }

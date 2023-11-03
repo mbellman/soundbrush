@@ -1,6 +1,6 @@
 import { createCanvas } from './canvas';
-import { render, saveDrawPoint, startNewBrushStroke } from './visuals';
-import { handleSounds, modulateCurrentSound, startNewSound, stopCurrentSound, stopModulatingCurrentSound } from './audio';
+import { noteToColor, render, saveDrawPoint, startNewBrushStroke } from './visuals';
+import { handleSounds, modulateCurrentSound, setCurrentSoundNote, startNewSound, stopCurrentSound, stopModulatingCurrentSound } from './audio';
 import { Vec2 } from './types';
 import './styles.scss';
 
@@ -20,7 +20,9 @@ export default function main() {
       y: e.clientY
     };
 
-    const note = 30 + Math.round(Math.random() * 20);
+    const divisions = 20;
+    const noteOffset = Math.floor(divisions * (1 - e.clientY / window.innerHeight));
+    const note = 30 + noteOffset;
 
     startNewBrushStroke();
     startNewSound('electricPiano', note);
@@ -28,8 +30,6 @@ export default function main() {
 
   document.addEventListener('mousemove', e => {
     if (drawing) {
-      saveDrawPoint(e.clientX, e.clientY);
-
       const delta: Vec2 = {
         x: e.clientX - lastMouse.x,
         y: e.clientY - lastMouse.y
@@ -39,7 +39,13 @@ export default function main() {
       const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
       const modulation = Math.min(5, mouseSpeed);
 
+      const divisions = 20;
+      const noteOffset = Math.floor(divisions * (1 - e.clientY / window.innerHeight));
+      const note = 30 + noteOffset;
+
       modulateCurrentSound(modulation);
+      setCurrentSoundNote(note);
+      saveDrawPoint(e.clientX, e.clientY, noteToColor(note));
 
       lastMouse.x = e.clientX;
       lastMouse.y = e.clientY;
