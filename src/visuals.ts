@@ -51,6 +51,10 @@ export function noteToColor(note: number): Color {
   return noteToColorMap[note % 12];
 }
 
+export function colorToRgbString({ r, g, b }: Color, factor = 1): string {
+  return `rgb(${r * factor}, ${g * factor}, ${b * factor})`;
+}
+
 export function createNewBrushStroke(): BrushStroke {
   brushStrokes.push({
     points: []
@@ -87,11 +91,48 @@ export function clearUnusedDrawPointsAndBrushStrokes() {
   }
 }
 
-export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-  // Clear the screen
+export function clearScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);  
+}
 
+const lastNotePlayTimeMap: Record<number, number> = {};
+
+export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, mouseY: number, drawing: boolean) {
+  const divisions = 20;
+  const barHeight = window.innerHeight / divisions;
+  const halfBarHeight = barHeight / 2;
+
+  for (let i = 50; i >= 30; i--) {
+    const yOffset = (50 - i) * barHeight;
+    const centerY = yOffset + halfBarHeight;
+    const distance = Math.abs(mouseY - centerY);
+    let brightness = 0.8 - Math.sqrt(distance / 5000);
+
+    brightness += 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
+
+    if (drawing && distance < halfBarHeight) {
+      // Playing note!
+      lastNotePlayTimeMap[i] = Date.now();
+    }
+
+    ctx.fillStyle = colorToRgbString(noteToColor(i), brightness);
+
+    ctx.fillRect(0, yOffset, window.innerWidth, barHeight + 1);
+  }
+
+  const gradient = ctx.createLinearGradient(0, window.innerHeight / 2, window.innerWidth, window.innerHeight / 2);
+
+  gradient.addColorStop(0, '#000');
+  gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+  gradient.addColorStop(1, '#000');
+
+  ctx.fillStyle = gradient;
+
+  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+}
+
+export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   for (const { points } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
@@ -144,7 +185,7 @@ export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
         ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
         ctx.stroke();
 
-        drawCircle(ctx, p.x, p.y, endColor, radius);
+        drawCircle(ctx, p.x, p.y, gradient, radius);
       } else {
         const colorValue = `rgb(${p.color.r * lightness}, ${p.color.g * lightness}, ${p.color.b * lightness})`;
 

@@ -1,6 +1,6 @@
 import { createCanvas } from './canvas';
-import { noteToColor, render, saveDrawPoint, createNewBrushStroke } from './visuals';
-import { handleSounds, modulateCurrentSound, setCurrentSoundNote, startNewSound, stopCurrentSound, stopModulatingCurrentSound } from './audio';
+import * as visuals from './visuals';
+import * as audio from './audio';
 import { Vec2 } from './types';
 import './styles.scss';
 
@@ -9,11 +9,11 @@ import './styles.scss';
  */
 function handleDrawAction(x: number, y: number) {
   const divisions = 20;
-  const noteOffset = Math.floor(divisions * (1 - y / window.innerHeight));
+  const noteOffset = Math.ceil(divisions * (1 - y / window.innerHeight));
   const note = 30 + noteOffset;
 
-  setCurrentSoundNote(note);
-  saveDrawPoint(x, y, noteToColor(note));
+  audio.setCurrentSoundNote(note);
+  visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
 }
 
 export default function main() {
@@ -22,7 +22,7 @@ export default function main() {
 
   let drawing = false;
   let running = true;
-  let lastMouse: Vec2;
+  let lastMouse: Vec2 = { x: 0, y: 0 };
 
   document.addEventListener('mousedown', e => {
     drawing = true;
@@ -32,8 +32,8 @@ export default function main() {
       y: e.clientY
     };
 
-    createNewBrushStroke();
-    startNewSound('electricPiano', 0);
+    visuals.createNewBrushStroke();
+    audio.startNewSound('electricPiano', 0);
   });
 
   document.addEventListener('mousemove', e => {
@@ -47,18 +47,18 @@ export default function main() {
       const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
       const modulation = Math.min(5, mouseSpeed * 10);
 
-      modulateCurrentSound(modulation);
-
-      lastMouse.x = e.clientX;
-      lastMouse.y = e.clientY;
+      audio.modulateCurrentSound(modulation);
     }
+
+    lastMouse.x = e.clientX;
+    lastMouse.y = e.clientY;
   });
 
   document.addEventListener('mouseup', () => {
     drawing = false;
 
-    stopModulatingCurrentSound();
-    stopCurrentSound();
+    audio.stopModulatingCurrentSound();
+    audio.stopCurrentSound();
   });
   
   function loop() {
@@ -70,8 +70,10 @@ export default function main() {
       handleDrawAction(lastMouse.x, lastMouse.y);
     }
 
-    render(canvas, ctx);
-    handleSounds();
+    visuals.clearScreen(canvas, ctx);
+    visuals.drawNoteBars(canvas, ctx, lastMouse.y, drawing);
+    visuals.render(canvas, ctx);
+    audio.handleSounds();
 
     requestAnimationFrame(loop);
   }
