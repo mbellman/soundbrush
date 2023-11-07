@@ -11,11 +11,11 @@ const settings: Settings = {
 };
 
 const state: State = {
+  selectedInstrument: 'electricPiano',
   scroll: {
     x: 0,
     y: 0
   },
-
   running: true,
   drawing: false,
   lastMouse: {
@@ -28,8 +28,7 @@ const state: State = {
  * @internal
  */
 function handleDrawAction({ x, y }: Vec2) {
-  const divisions = settings.divisions;
-  const noteOffset = divisions * (1 - y / window.innerHeight);
+  const noteOffset = settings.divisions * (1 - y / window.innerHeight);
   const adjustedNoteOffset = settings.microtonal ? noteOffset : Math.ceil(noteOffset);
   const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const note = (topNote - settings.divisions) + adjustedNoteOffset;
@@ -38,50 +37,66 @@ function handleDrawAction({ x, y }: Vec2) {
   visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
 }
 
+/**
+ * @internal
+ */
+function onMouseDown(e: MouseEvent) {
+  state.drawing = true;
+ 
+  state.lastMouse = {
+    x: e.clientX,
+    y: e.clientY
+  };
+
+  visuals.createNewBrushStroke();
+  audio.startNewSound(state.selectedInstrument, 0);
+}
+
+/**
+ * @internal
+ */
+function onMouseMove(e: MouseEvent) {
+  if (state.drawing) {
+    const delta: Vec2 = {
+      x: e.clientX - state.lastMouse.x,
+      y: e.clientY - state.lastMouse.y
+    };
+
+    const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
+    const modulation = Math.min(5, mouseSpeed * 50);
+
+    audio.modulateCurrentSound(modulation);
+  }
+
+  state.lastMouse.x = e.clientX;
+  state.lastMouse.y = e.clientY;
+}
+
+/**
+ * @internal
+ */
+function onMouseUp(e: MouseEvent) {
+  state.drawing = false;
+
+  audio.stopModulatingCurrentSound();
+  audio.stopCurrentSound();
+}
+
+/**
+ * @internal
+ */
+function onWheel(e: WheelEvent) {
+  state.scroll.y -= e.deltaY;
+}
+
 export default function main() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
 
-  document.addEventListener('mousedown', e => {
-    state.drawing = true;
- 
-    state.lastMouse = {
-      x: e.clientX,
-      y: e.clientY
-    };
-
-    visuals.createNewBrushStroke();
-    audio.startNewSound('electricPiano', 0);
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (state.drawing) {
-      const delta: Vec2 = {
-        x: e.clientX - state.lastMouse.x,
-        y: e.clientY - state.lastMouse.y
-      };
-
-      // @todo use mouse speed to control sound behavior
-      const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
-      const modulation = Math.min(5, mouseSpeed * 50);
-
-      audio.modulateCurrentSound(modulation);
-    }
-
-    state.lastMouse.x = e.clientX;
-    state.lastMouse.y = e.clientY;
-  });
-
-  document.addEventListener('mouseup', () => {
-    state.drawing = false;
-
-    audio.stopModulatingCurrentSound();
-    audio.stopCurrentSound();
-  });
-
-  document.addEventListener('wheel', e => {
-    state.scroll.y -= e.deltaY;
-  });
+  document.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('wheel', onWheel);
   
   function loop() {
     if (!state.running) {

@@ -20,7 +20,7 @@ const synths = {
   bass: new Float32Array([ 0, 1, 0.8, 0.2, 0.02 ]),
 };
 
-type Instrument = keyof typeof synths
+export type Instrument = keyof typeof synths
 
 /**
  * @internal
