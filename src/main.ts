@@ -2,11 +2,12 @@ import { createCanvas } from './canvas';
 import * as visuals from './visuals';
 import * as audio from './audio';
 import { Settings, State, Vec2 } from './types';
+import { MIDDLE_NOTE } from './constants';
 import './styles.scss';
 
 const settings: Settings = {
   microtonal: false,
-  divisions: 40
+  divisions: 25
 };
 
 const state: State = {
@@ -30,7 +31,8 @@ function handleDrawAction({ x, y }: Vec2) {
   const divisions = settings.divisions;
   const noteOffset = divisions * (1 - y / window.innerHeight);
   const adjustedNoteOffset = settings.microtonal ? noteOffset : Math.ceil(noteOffset);
-  const note = (50 - settings.divisions) + adjustedNoteOffset;
+  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
+  const note = (topNote - settings.divisions) + adjustedNoteOffset;
 
   audio.setCurrentSoundNote(note);
   visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
@@ -49,7 +51,7 @@ export default function main() {
     };
 
     visuals.createNewBrushStroke();
-    audio.startNewSound('bass', 0);
+    audio.startNewSound('electricPiano', 0);
   });
 
   document.addEventListener('mousemove', e => {
@@ -76,6 +78,10 @@ export default function main() {
     audio.stopModulatingCurrentSound();
     audio.stopCurrentSound();
   });
+
+  document.addEventListener('wheel', e => {
+    state.scroll.y -= e.deltaY;
+  });
   
   function loop() {
     if (!state.running) {
@@ -87,7 +93,7 @@ export default function main() {
     }
 
     visuals.clearScreen(canvas, ctx);
-    visuals.drawNoteBars(canvas, ctx, state.lastMouse.y, state.drawing, settings);
+    visuals.drawNoteBars(canvas, ctx, state.lastMouse.y, state, settings);
     visuals.render(canvas, ctx);
     audio.handleSounds();
 

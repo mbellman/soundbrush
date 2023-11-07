@@ -1,6 +1,6 @@
 import { drawCircle } from './canvas';
-import { FADE_OUT_TIME } from './constants';
-import { Settings, Vec2 } from './types';
+import { FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
+import { Settings, State, Vec2 } from './types';
 import { timeSince } from './utilities';
 
 interface Color {
@@ -98,11 +98,11 @@ export function clearScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingConte
 
 const lastNotePlayTimeMap: Record<number, number> = {};
 
-export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, mouseY: number, drawing: boolean, settings: Settings) {
+export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, mouseY: number, state: State, settings: Settings) {
   const divisions = settings.divisions;
   const barHeight = window.innerHeight / divisions;
   const halfBarHeight = barHeight / 2;
-  const topNote = 50;
+  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const bottomNote = topNote - divisions;
 
   for (let i = topNote; i >= bottomNote; i--) {
@@ -110,7 +110,7 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
     const centerY = yOffset + halfBarHeight;
     const distance = Math.abs(mouseY - centerY);
 
-    if (drawing && distance < halfBarHeight) {
+    if (state.drawing && distance < halfBarHeight) {
       // Playing note!
       lastNotePlayTimeMap[i] = Date.now();
     }

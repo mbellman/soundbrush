@@ -1,4 +1,4 @@
-import { FADE_OUT_TIME, TUNING_CONSTANT } from './constants';
+import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
 import { timeSince } from './utilities';
 
 let context: AudioContext = null;
@@ -26,7 +26,7 @@ type Instrument = keyof typeof synths
  * @internal
  */
 function getFrequency(note: number) {
-  return Math.pow(TUNING_CONSTANT, note - 49) * 440;
+  return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
 /**
