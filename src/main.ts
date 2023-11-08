@@ -1,7 +1,7 @@
 import { createCanvas } from './canvas';
 import * as visuals from './visuals';
 import * as audio from './audio';
-import { Settings, State, Vec2 } from './types';
+import { Measure, Settings, State, Vec2 } from './types';
 import { MIDDLE_NOTE } from './constants';
 import './styles.scss';
 
@@ -11,7 +11,7 @@ const settings: Settings = {
 };
 
 const state: State = {
-  selectedInstrument: 'electricPiano',
+  selectedInstrument: 'bass',
   scroll: {
     x: 0,
     y: 0
@@ -21,17 +21,29 @@ const state: State = {
   lastMouse: {
     x: 0,
     y: 0
+  },
+  heldKeys: {},
+  sequence: {
+    measures: []
   }
 };
 
 /**
  * @internal
  */
-function handleDrawAction({ x, y }: Vec2) {
+function getNoteAtYCoordinate(y: number): number {
+  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteOffset = settings.divisions * (1 - y / window.innerHeight);
   const adjustedNoteOffset = settings.microtonal ? noteOffset : Math.ceil(noteOffset);
-  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
-  const note = (topNote - settings.divisions) + adjustedNoteOffset;
+
+  return (topNote - settings.divisions) + adjustedNoteOffset;
+}
+
+/**
+ * @internal
+ */
+function handleDrawAction({ x, y }: Vec2) {
+  const note = getNoteAtYCoordinate(y);
 
   audio.setCurrentSoundNote(note);
   visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
@@ -50,6 +62,25 @@ function onMouseDown(e: MouseEvent) {
 
   visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
+
+  const note = getNoteAtYCoordinate(e.clientY);
+
+  // @temporary
+  if (state.sequence.measures.length === 0) {
+    state.sequence.measures.push({
+      instrument: state.selectedInstrument,
+      notes: []
+    });
+  }
+
+  // @temporary
+  const measure = state.sequence.measures[0];
+
+  measure.notes.push({
+    frequency: audio.getFrequency(note),
+    offset: measure.notes.length * 0.2,
+    duration: 0.5
+  });
 }
 
 /**
@@ -89,6 +120,14 @@ function onWheel(e: WheelEvent) {
   state.scroll.y -= e.deltaY;
 }
 
+/**
+ * @internal
+ */
+function undoLastAction() {
+  // @temporary
+  state.sequence.measures[0].notes.pop();
+}
+
 export default function main() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
@@ -97,6 +136,25 @@ export default function main() {
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
   document.addEventListener('wheel', onWheel);
+
+  document.addEventListener('keydown', e => {
+    state.heldKeys[e.key] = true;
+  });
+
+  document.addEventListener('keyup', e => {
+    if (
+      e.key === 'z' && state.heldKeys.Control ||
+      e.key === 'Backspace'
+    ) {
+      undoLastAction();
+    }
+
+    if (e.key === 'Enter') {
+      audio.playSequence(state.sequence);
+    }
+
+    state.heldKeys[e.key] = false;
+  });
   
   function loop() {
     if (!state.running) {

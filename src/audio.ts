@@ -1,4 +1,5 @@
 import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
+import { Sequence } from './types';
 import { timeSince } from './utilities';
 
 let context: AudioContext = null;
@@ -25,13 +26,6 @@ export type Instrument = keyof typeof synths
 /**
  * @internal
  */
-function getFrequency(note: number) {
-  return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
-}
-
-/**
- * @internal
- */
 function initializeContextAndGlobalNodes() {
   context = new AudioContext({
     sampleRate: 44100
@@ -42,7 +36,8 @@ function initializeContextAndGlobalNodes() {
   compressor.threshold.value = -50;
   compressor.knee.value = 0;
   compressor.ratio.value = 5;
-  compressor.release.value = 0.5;
+  compressor.attack.value = 0;
+  compressor.release.value = 1;
   
   compressor.connect(context.destination);
 }
@@ -60,23 +55,25 @@ function createWaveForm(instrument: Instrument): PeriodicWave {
 /**
  * @internal
  */
-function createSound(instrument: Instrument, note: number): Sound {
+function createSound(instrument: Instrument, note: number, startOffset = 0, frequency = 0): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
   }
 
   const _gain = context.createGain();
   const node = context.createOscillator();
+  const startTime = context.currentTime + startOffset;
 
-  node.frequency.value = getFrequency(note);
+  node.frequency.value = frequency || getFrequency(note);
   currentSoundBaseFrequency = node.frequency.value;
-  
+
   node.setPeriodicWave(createWaveForm(instrument));
-  node.start(context.currentTime);
+  node.start(startTime);
   node.connect(_gain);
 
   _gain.gain.value = 0;
-  _gain.gain.linearRampToValueAtTime(1, context.currentTime + 0.01);
+  _gain.gain.linearRampToValueAtTime(0, startTime);
+  _gain.gain.linearRampToValueAtTime(1, startTime + 0.01);
 
   _gain.connect(compressor);
 
@@ -103,6 +100,10 @@ function stopSound(sound: Sound) {
   sound.node.stop(context.currentTime);
   sound.node.disconnect();
   sound._gain.disconnect();
+}
+
+export function getFrequency(note: number) {
+  return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
 export function startNewSound(instrument: Instrument, note: number) {
@@ -149,5 +150,27 @@ export function handleSounds() {
 
       sounds.splice(i, 1);
     }
+  }
+}
+
+export function playSequence(sequence: Sequence) {
+  // @temporary
+  const measure = sequence.measures[0];
+  const startDelay = 0.1;
+
+  for (const note of measure.notes) {
+    const startOffset = startDelay + note.offset;
+    const startTime = context.currentTime + startOffset;
+    const stopTime = startTime + note.duration;
+    const sound = createSound(measure.instrument, 0, startOffset, note.frequency);
+
+    // @todo use sound.node.stop()
+    // @todo cleanup
+    sound._endTime = Date.now() + startDelay * 1000 + note.offset * 1000 + note.duration * 1000 - FADE_OUT_TIME;
+
+    sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
+    sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+
+    sounds.push(sound);
   }
 }
