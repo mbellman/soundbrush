@@ -2,3 +2,10 @@ body {
   margin: 0;
   overflow: hidden;
 }
+
+.note {
+  border-radius: 4px;
+  box-shadow: 0 0 10px 0 #fff;
+  height: 16px;
+  position: absolute;
+}

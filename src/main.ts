@@ -5,6 +5,8 @@ import { Measure, Settings, State, Vec2 } from './types';
 import { MIDDLE_NOTE } from './constants';
 import './styles.scss';
 
+const noteElements: HTMLElement[] = [];
+
 const settings: Settings = {
   microtonal: false,
   divisions: 25
@@ -18,7 +20,7 @@ const state: State = {
   },
   running: true,
   drawing: false,
-  lastMouse: {
+  mouse: {
     x: 0,
     y: 0
   },
@@ -52,10 +54,32 @@ function handleDrawAction({ x, y }: Vec2) {
 /**
  * @internal
  */
+function createNoteElement(note: number): HTMLDivElement {
+  const element = document.createElement('div');
+  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
+  const noteBarHeight = window.innerHeight / settings.divisions;
+  const yOffset = (topNote - note) * noteBarHeight + 5;
+
+  element.classList.add('note');
+
+  element.style.top = `${yOffset}px`;
+  element.style.left = `${state.mouse.x}px`;
+  element.style.width = '100px';
+  element.style.height = `${noteBarHeight - 10}px`;
+  element.style.backgroundColor = visuals.colorToRgbString(visuals.noteToColor(note));
+
+  document.body.appendChild(element);
+
+  return element;
+}
+
+/**
+ * @internal
+ */
 function onMouseDown(e: MouseEvent) {
   state.drawing = true;
  
-  state.lastMouse = {
+  state.mouse = {
     x: e.clientX,
     y: e.clientY
   };
@@ -64,6 +88,8 @@ function onMouseDown(e: MouseEvent) {
   audio.startNewSound(state.selectedInstrument, 0);
 
   const note = getNoteAtYCoordinate(e.clientY);
+
+  // @todo add history action
 
   // @temporary
   if (state.sequence.measures.length === 0) {
@@ -81,6 +107,8 @@ function onMouseDown(e: MouseEvent) {
     offset: measure.notes.length * 0.2,
     duration: 0.5
   });
+
+  noteElements.push(createNoteElement(note));
 }
 
 /**
@@ -89,8 +117,8 @@ function onMouseDown(e: MouseEvent) {
 function onMouseMove(e: MouseEvent) {
   if (state.drawing) {
     const delta: Vec2 = {
-      x: e.clientX - state.lastMouse.x,
-      y: e.clientY - state.lastMouse.y
+      x: e.clientX - state.mouse.x,
+      y: e.clientY - state.mouse.y
     };
 
     const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
@@ -99,8 +127,8 @@ function onMouseMove(e: MouseEvent) {
     audio.modulateCurrentSound(modulation);
   }
 
-  state.lastMouse.x = e.clientX;
-  state.lastMouse.y = e.clientY;
+  state.mouse.x = e.clientX;
+  state.mouse.y = e.clientY;
 }
 
 /**
@@ -126,6 +154,8 @@ function onWheel(e: WheelEvent) {
 function undoLastAction() {
   // @temporary
   state.sequence.measures[0].notes.pop();
+
+  // @todo remove placed notes
 }
 
 export default function main() {
@@ -162,11 +192,11 @@ export default function main() {
     }
 
     if (state.drawing) {
-      handleDrawAction(state.lastMouse);
+      handleDrawAction(state.mouse);
     }
 
     visuals.clearScreen(canvas, ctx);
-    visuals.drawNoteBars(canvas, ctx, state.lastMouse.y, state, settings);
+    visuals.drawNoteBars(canvas, ctx, state, settings);
     visuals.render(canvas, ctx);
     audio.handleSounds();
 

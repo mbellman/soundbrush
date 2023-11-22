@@ -31,7 +31,7 @@ export interface State {
   scroll: Vec2
   running: boolean
   drawing: boolean
-  lastMouse: Vec2
+  mouse: Vec2
   heldKeys: Record<string, boolean>
   sequence: Sequence
 }

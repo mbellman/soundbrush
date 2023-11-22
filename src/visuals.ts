@@ -35,6 +35,8 @@ const noteToColorMap: Record<number, Color> = {
 
 const brushStrokes: BrushStroke[] = [];
 
+const lastNotePlayTimeMap: Record<number, number> = {};
+
 /**
  * @internal
  */
@@ -96,9 +98,7 @@ export function clearScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingConte
   ctx.fillRect(0, 0, canvas.width, canvas.height);  
 }
 
-const lastNotePlayTimeMap: Record<number, number> = {};
-
-export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, mouseY: number, state: State, settings: Settings) {
+export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
   const divisions = settings.divisions;
   const barHeight = window.innerHeight / divisions;
   const halfBarHeight = barHeight / 2;
@@ -108,7 +108,8 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
   for (let i = topNote; i >= bottomNote; i--) {
     const yOffset = (topNote - i) * barHeight;
     const centerY = yOffset + halfBarHeight;
-    const distance = Math.abs(mouseY - centerY);
+    const distance = Math.abs(state.mouse.y - centerY);
+    const lastPlayTimeBrightness = 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
 
     if (state.drawing && distance < halfBarHeight) {
       // Playing note!
@@ -116,14 +117,14 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
     }
 
     if (settings.microtonal) {
-      const barTopDistance = Math.abs(mouseY - yOffset);
-      const barBottomDistance = Math.abs(mouseY - (yOffset + barHeight));
+      const barTopDistance = Math.abs(state.mouse.y - yOffset);
+      const barBottomDistance = Math.abs(state.mouse.y - (yOffset + barHeight));
       const gradient = ctx.createLinearGradient(0, yOffset, 0, yOffset + barHeight);
       let startBrightness = 0.8 - Math.min(0.8, Math.sqrt(barTopDistance / 1000));
       let endBrightness = 0.8 - Math.min(0.8, Math.sqrt(barBottomDistance / 1000));
 
-      startBrightness += 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
-      endBrightness += 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
+      startBrightness += lastPlayTimeBrightness;
+      endBrightness += lastPlayTimeBrightness;
 
       gradient.addColorStop(0, colorToRgbString(noteToColor(i + 1), startBrightness));
       gradient.addColorStop(1, colorToRgbString(noteToColor(i), endBrightness));
@@ -132,7 +133,7 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
     } else {
       let brightness = 0.8 - Math.min(0.8, Math.sqrt(distance / 1000));
 
-      brightness += 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
+      brightness += lastPlayTimeBrightness;
 
       ctx.fillStyle = colorToRgbString(noteToColor(i), brightness);
     }
