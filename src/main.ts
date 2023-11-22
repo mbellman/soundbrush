@@ -8,6 +8,7 @@ import './styles.scss';
 const noteElements: HTMLElement[] = [];
 
 const settings: Settings = {
+  // @todo use blending for microtonal note colors
   microtonal: false,
   divisions: 25
 };
@@ -59,6 +60,7 @@ function createNoteElement(note: number): HTMLDivElement {
   const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteBarHeight = window.innerHeight / settings.divisions;
   const yOffset = (topNote - note) * noteBarHeight + 5;
+  const colorString = visuals.colorToRgbString(visuals.noteToColor(note));
 
   element.classList.add('note');
 
@@ -66,7 +68,8 @@ function createNoteElement(note: number): HTMLDivElement {
   element.style.left = `${state.mouse.x}px`;
   element.style.width = '100px';
   element.style.height = `${noteBarHeight - 10}px`;
-  element.style.backgroundColor = visuals.colorToRgbString(visuals.noteToColor(note));
+  element.style.backgroundColor = colorString;
+  element.style.boxShadow = `0 0 10px 0 ${colorString}`;
 
   document.body.appendChild(element);
 

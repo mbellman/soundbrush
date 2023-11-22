@@ -33,12 +33,12 @@ function initializeContextAndGlobalNodes() {
 
   compressor = context.createDynamicsCompressor();
 
-  compressor.threshold.value = -50;
-  compressor.knee.value = 0;
+  compressor.threshold.value = -30;
+  compressor.knee.value = 10;
   compressor.ratio.value = 5;
   compressor.attack.value = 0;
-  compressor.release.value = 1;
-  
+  compressor.release.value = 5;
+
   compressor.connect(context.destination);
 }
 
