@@ -1,35 +1,29 @@
 body {
   margin: 0;
   overflow: hidden;
+  user-select: none;
 }
 
-@keyframes animate-note-in {
+@keyframes fade-in {
   0% {
     opacity: 0;
-    transform: scale(0.9);
-  }
-  25% {
-    opacity: 0.25;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  75% {
-    opacity: 0.75;
-    transform: scale(1.1);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px 0;
   }
 }
 
 .note {
-  animation: animate-note-in 0.2s;
+  animation: fade-in 0.3s;
   border-radius: 4px;
   box-shadow: 0 0 10px 0 #fff;
   height: 16px;
   position: absolute;
+  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8);
 }

@@ -37,7 +37,7 @@ function initializeContextAndGlobalNodes() {
   compressor.knee.value = 10;
   compressor.ratio.value = 5;
   compressor.attack.value = 0;
-  compressor.release.value = 5;
+  compressor.release.value = 1;
 
   compressor.connect(context.destination);
 }
@@ -62,7 +62,7 @@ function createSound(instrument: Instrument, note: number, startOffset = 0, freq
 
   const _gain = context.createGain();
   const node = context.createOscillator();
-  const startTime = context.currentTime + startOffset;
+  const startTime = context.currentTime + startOffset + 0.01;
 
   node.frequency.value = frequency || getFrequency(note);
   currentSoundBaseFrequency = node.frequency.value;
@@ -122,6 +122,10 @@ export function modulateCurrentSound(modulation: number) {
 }
 
 export function stopModulatingCurrentSound() {
+  if (!currentSound) {
+    return;
+  }
+
   currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
 }
 
@@ -131,6 +135,10 @@ export function setCurrentSoundNote(note: number) {
 }
 
 export function stopCurrentSound() {
+  if (!currentSound) {
+    return;
+  }
+
   currentSound._endTime = Date.now();
 
   fadeOutSound(currentSound);
@@ -153,7 +161,7 @@ export function handleSounds() {
   }
 }
 
-export function playSequence(sequence: Sequence) {
+export function playSequence(sequence: Sequence, onEnded?: () => void) {
   // @temporary
   const measure = sequence.measures[0];
   const startDelay = 0.1;
@@ -170,6 +178,10 @@ export function playSequence(sequence: Sequence) {
 
     sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
     sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+
+    if (note === measure.notes[measure.notes.length - 1]) {
+      sound.node.addEventListener('ended', onEnded);
+    }
 
     sounds.push(sound);
   }

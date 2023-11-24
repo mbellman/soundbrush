@@ -15,16 +15,12 @@ const settings: Settings = {
 
 const state: State = {
   selectedInstrument: 'bass',
-  scroll: {
-    x: 0,
-    y: 0
-  },
+  scroll: { x: 0, y: 0 },
   running: true,
   drawing: false,
-  mouse: {
-    x: 0,
-    y: 0
-  },
+  playing: false,
+  mouse: { x: 0, y: 0 },
+  dragStart: { x: 0, y: 0 },
   heldKeys: {},
   sequence: {
     measures: []
@@ -49,13 +45,15 @@ function handleDrawAction({ x, y }: Vec2) {
   const note = getNoteAtYCoordinate(y);
 
   audio.setCurrentSoundNote(note);
-  visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
+  // visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
 }
+
+const DEFAULT_NOTE_LENGTH = 20;
 
 /**
  * @internal
  */
-function createNoteElement(note: number): HTMLDivElement {
+function createNoteElement(note: number): HTMLElement {
   const element = document.createElement('div');
   const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteBarHeight = window.innerHeight / settings.divisions;
@@ -66,7 +64,7 @@ function createNoteElement(note: number): HTMLDivElement {
 
   element.style.top = `${yOffset}px`;
   element.style.left = `${state.mouse.x}px`;
-  element.style.width = '100px';
+  element.style.width = `${DEFAULT_NOTE_LENGTH}px`;
   element.style.height = `${noteBarHeight - 10}px`;
   element.style.backgroundColor = colorString;
   element.style.boxShadow = `0 0 10px 0 ${colorString}`;
@@ -74,6 +72,13 @@ function createNoteElement(note: number): HTMLDivElement {
   document.body.appendChild(element);
 
   return element;
+}
+
+/**
+ * @internal
+ */
+function getLastNoteElement(): HTMLElement {
+  return noteElements[noteElements.length - 1];
 }
 
 /**
@@ -87,7 +92,15 @@ function onMouseDown(e: MouseEvent) {
     y: e.clientY
   };
 
-  visuals.createNewBrushStroke();
+  state.dragStart = {
+    x: e.clientX,
+    y: e.clientY
+  };
+
+  audio.stopModulatingCurrentSound();
+  audio.stopCurrentSound();
+
+  // visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
   const note = getNoteAtYCoordinate(e.clientY);
@@ -119,15 +132,29 @@ function onMouseDown(e: MouseEvent) {
  */
 function onMouseMove(e: MouseEvent) {
   if (state.drawing) {
-    const delta: Vec2 = {
+    const lastDelta: Vec2 = {
       x: e.clientX - state.mouse.x,
       y: e.clientY - state.mouse.y
     };
 
-    const mouseSpeed = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
+    const totalDelta: Vec2 = {
+      x: e.clientX - state.dragStart.x,
+      y: e.clientY - state.dragStart.y
+    };
+
+    const mouseSpeed = Math.sqrt(lastDelta.x*lastDelta.x + lastDelta.y*lastDelta.y);
     const modulation = Math.min(5, mouseSpeed * 50);
 
     audio.modulateCurrentSound(modulation);
+
+    if (totalDelta.x > DEFAULT_NOTE_LENGTH) {
+      const overflow = totalDelta.x - DEFAULT_NOTE_LENGTH;
+      const activeNoteElement = getLastNoteElement();
+      const compression = Math.pow(1 - overflow / (overflow + 2000), 2);
+
+      activeNoteElement.style.width = `${totalDelta.x}px`;
+      activeNoteElement.style.transform = `scaleY(${compression})`;
+    }
   }
 
   state.mouse.x = e.clientX;
@@ -142,6 +169,8 @@ function onMouseUp(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
+
+  getLastNoteElement().style.transform = 'scaleY(1)';
 }
 
 /**
@@ -158,7 +187,24 @@ function undoLastAction() {
   // @temporary
   state.sequence.measures[0].notes.pop();
 
-  // @todo remove placed notes
+  if (noteElements.length > 0) {
+    document.body.removeChild(getLastNoteElement());
+  
+    noteElements.pop();
+  }
+}
+
+/**
+ * @internal
+ */
+function playSequence(): void {
+  audio.playSequence(state.sequence, () => {
+    console.log('sequence ended');
+
+    state.playing = false;
+  });
+
+  state.playing = true;
 }
 
 export default function main() {
@@ -183,7 +229,7 @@ export default function main() {
     }
 
     if (e.key === 'Enter') {
-      audio.playSequence(state.sequence);
+      playSequence();
     }
 
     state.heldKeys[e.key] = false;
@@ -196,6 +242,14 @@ export default function main() {
 
     if (state.drawing) {
       handleDrawAction(state.mouse);
+    }
+
+    if (state.playing) {
+      const x = 0;
+      const y = 0;
+      const note = getNoteAtYCoordinate(y);
+
+      visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
     }
 
     visuals.clearScreen(canvas, ctx);

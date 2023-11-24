@@ -17,6 +17,7 @@ export interface Measure {
   notes: Note[]
 }
 
+// @todo convert to a class
 export interface Sequence {
   measures: Measure[]
 }
@@ -31,7 +32,9 @@ export interface State {
   scroll: Vec2
   running: boolean
   drawing: boolean
+  playing: boolean
   mouse: Vec2
+  dragStart: Vec2
   heldKeys: Record<string, boolean>
   sequence: Sequence
 }
