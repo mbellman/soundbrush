@@ -59,7 +59,7 @@ const DEFAULT_NOTE_LENGTH = 20;
 /**
  * @internal
  */
-function createNoteElement(note: number): HTMLElement {
+function createNoteElement(note: number, id: number): HTMLElement {
   const element = document.createElement('div');
   const noteBarHeight = window.innerHeight / settings.divisions;
   const elementHeight = noteBarHeight - 10;
@@ -67,6 +67,7 @@ function createNoteElement(note: number): HTMLElement {
   const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
   element.classList.add('note');
+  element.setAttribute('data-id', String(id));
 
   element.style.top = `${yOffset}px`;
   element.style.left = `${state.mouse.x}px`;
@@ -118,6 +119,7 @@ function onMouseDown(e: MouseEvent) {
   const sequenceNote = sequence.createNote({
     instrument: state.selectedInstrument,
     frequency: audio.getFrequency(note),
+    // @todo align to beat markers
     offset: state.mouse.x / 400,
     // @todo adjust duration as note element is stretched
     duration: 0.5
@@ -129,7 +131,7 @@ function onMouseDown(e: MouseEvent) {
   });
 
   sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
-  noteElements.push(createNoteElement(note));
+  noteElements.push(createNoteElement(note, sequenceNote.id));
 
   document.body.style.cursor = 'e-resize';
 }
@@ -159,8 +161,17 @@ function onMouseMove(e: MouseEvent) {
       const activeNoteElement = getLastNoteElement();
       const compression = Math.pow(1 - overflow / (overflow + 2000), 2);
 
+      const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
+      const noteBarHeight = window.innerHeight / settings.divisions;
+      const elementHeight = noteBarHeight - 10;
+      const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
+      const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
+
       activeNoteElement.style.width = `${totalDelta.x}px`;
+      activeNoteElement.style.top = `${yOffset}px`;
       activeNoteElement.style.transform = `scaleY(${compression})`;
+      activeNoteElement.style.backgroundColor = colorString;
+      activeNoteElement.style.boxShadow = `0 0 10px 0 ${colorString}`;
     }
   }
 
@@ -177,7 +188,15 @@ function onMouseUp(e: MouseEvent) {
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
-  getLastNoteElement().style.transform = 'scaleY(1)';
+  // @todo base this on selected element
+  const activeNoteElement = getLastNoteElement();
+  const activeNoteId = Number(activeNoteElement.getAttribute('data-id'));
+  const activeNote = state.sequence.findNote(state.selectedInstrument, activeNoteId);
+  const finalNoteValue = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
+
+  activeNoteElement.style.transform = 'scaleY(1)';
+
+  activeNote.frequency = audio.getFrequency(finalNoteValue);
 
   document.body.style.cursor = 'default';
 }
@@ -204,8 +223,8 @@ function undoLastAction() {
       // @temporary
       // @todo resolve the proper note element (e.g. getElementForNoteId())
       if (noteElements.length > 0) {
-        document.body.removeChild(getLastNoteElement());
-          
+        noteContainer.removeChild(getLastNoteElement());
+
         noteElements.pop();
       }
 

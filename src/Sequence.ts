@@ -26,10 +26,7 @@ export default class Sequence {
   public addNoteToChannel(instrument: Instrument, note: Note): void {
     const channel = this.findChannel(instrument) || this.createChannel(instrument);
 
-    channel.notes.push({
-      ...note,
-      id: generateNoteId()
-    });
+    channel.notes.push(note);
   }
 
   public createChannel(instrument: Instrument): Channel {
@@ -52,6 +49,10 @@ export default class Sequence {
 
   public findChannel(instrument: Instrument): Channel {
     return this.channels.find(channel => channel.instrument === instrument);
+  }
+
+  public findNote(instrument: Instrument, id: number): Note {
+    return this.findChannel(instrument)?.notes.find(note => note.id === id);
   }
 
   public removeNoteFromChannel(instrument: Instrument, id: number): void {
