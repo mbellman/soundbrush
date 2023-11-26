@@ -117,40 +117,39 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
   const bottomNote = topNote - divisions;
 
   for (let i = topNote; i >= bottomNote; i--) {
-    const yOffset = (topNote - i) * barHeight;
-    const centerY = yOffset + halfBarHeight;
-    const distance = Math.abs(state.mouse.y - centerY);
-    const lastPlayTimeBrightness = 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
+    const topY = (topNote - i) * barHeight;
+    const centerY = topY + halfBarHeight;
+    const centerMouseDistance = Math.abs(state.mouse.y - centerY);
 
-    if (state.drawing && distance < halfBarHeight) {
+    if (state.drawing && centerMouseDistance < halfBarHeight) {
       // Playing note!
       lastNotePlayTimeMap[i] = Date.now();
     }
 
     if (settings.microtonal) {
-      const barTopDistance = Math.abs(state.mouse.y - yOffset);
-      const barBottomDistance = Math.abs(state.mouse.y - (yOffset + barHeight));
-      const gradient = ctx.createLinearGradient(0, yOffset, 0, yOffset + barHeight);
+      const barTopDistance = Math.abs(state.mouse.y - topY);
+      const barBottomDistance = Math.abs(state.mouse.y - (topY + barHeight));
+      const gradient = ctx.createLinearGradient(0, topY, 0, topY + barHeight);
       let startBrightness = 0.8 - Math.min(0.8, Math.sqrt(barTopDistance / 1000));
       let endBrightness = 0.8 - Math.min(0.8, Math.sqrt(barBottomDistance / 1000));
-
-      startBrightness += lastPlayTimeBrightness;
-      endBrightness += lastPlayTimeBrightness;
 
       gradient.addColorStop(0, colorToRgbString(noteToColor(i + 0.5), startBrightness));
       gradient.addColorStop(1, colorToRgbString(noteToColor(i - 0.5), endBrightness));
 
       ctx.fillStyle = gradient;
     } else {
-      let brightness = 0.8 - Math.min(0.8, Math.sqrt(distance / 1000));
+      const strumHighlightBrightness = 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
+      let brightness = 0.8 - Math.min(0.8, Math.sqrt(centerMouseDistance / 1000));
 
-      brightness += lastPlayTimeBrightness;
+      brightness += strumHighlightBrightness;
 
       ctx.fillStyle = colorToRgbString(noteToColor(i), brightness);
     }
 
-    ctx.fillRect(0, yOffset, window.innerWidth, barHeight + 1);
+    ctx.fillRect(0, topY, window.innerWidth, barHeight + 1);
   }
+
+  // @todo strum highlight when playing microtonal notes
 
   const gradient = ctx.createLinearGradient(0, window.innerHeight / 2, window.innerWidth, window.innerHeight / 2);
 
