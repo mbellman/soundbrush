@@ -1,3 +1,4 @@
+import Sequence, { Note } from './Sequence';
 import { Instrument } from './audio';
 
 export interface Vec2 {
@@ -5,21 +6,9 @@ export interface Vec2 {
   y: number
 }
 
-export interface Note {
-  // @todo use a range + linearRampToValueAtTime()
-  frequency: number
-  offset: number
-  duration: number
-}
-
-export interface Measure {
-  instrument: Instrument
-  notes: Note[]
-}
-
-// @todo convert to a class
-export interface Sequence {
-  measures: Measure[]
+interface HistoryAction {
+  action: 'add' | 'remove'
+  note?: Note
 }
 
 export interface Settings {
@@ -37,4 +26,5 @@ export interface State {
   dragStart: Vec2
   heldKeys: Record<string, boolean>
   sequence: Sequence
+  history: HistoryAction[]
 }

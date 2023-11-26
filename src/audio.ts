@@ -1,5 +1,4 @@
 import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
-import { Sequence } from './types';
 import { timeSince } from './utilities';
 
 let context: AudioContext = null;
@@ -55,7 +54,29 @@ function createWaveForm(instrument: Instrument): PeriodicWave {
 /**
  * @internal
  */
-function createSound(instrument: Instrument, note: number, startOffset = 0, frequency = 0): Sound {
+function fadeOutSound(sound: Sound) {
+  currentSound._gain.gain.value = currentSound._gain.gain.value;
+  currentSound._gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT_TIME / 1000);
+}
+
+/**
+ * @internal
+ */
+function stopSound(sound: Sound) {
+  sound.node.stop(context.currentTime);
+  sound.node.disconnect();
+  sound._gain.disconnect();
+}
+
+export function getContext(): AudioContext {
+  return context;
+}
+
+export function getFrequency(note: number) {
+  return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
+}
+
+export function createSound(instrument: Instrument, note: number, startOffset = 0, frequency = 0): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
   }
@@ -83,27 +104,6 @@ function createSound(instrument: Instrument, note: number, startOffset = 0, freq
     _startTime: Date.now(),
     _endTime: -1
   };
-}
-
-/**
- * @internal
- */
-function fadeOutSound(sound: Sound) {
-  currentSound._gain.gain.value = currentSound._gain.gain.value;
-  currentSound._gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT_TIME / 1000);
-}
-
-/**
- * @internal
- */
-function stopSound(sound: Sound) {
-  sound.node.stop(context.currentTime);
-  sound.node.disconnect();
-  sound._gain.disconnect();
-}
-
-export function getFrequency(note: number) {
-  return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
 export function startNewSound(instrument: Instrument, note: number) {
@@ -161,28 +161,28 @@ export function handleSounds() {
   }
 }
 
-export function playSequence(sequence: Sequence, onEnded?: () => void) {
-  // @temporary
-  const measure = sequence.measures[0];
-  const startDelay = 0.1;
+// export function playSequence(sequence: Sequence, onEnded?: () => void) {
+//   // @temporary
+//   const measure = sequence.measures[0];
+//   const startDelay = 0.1;
 
-  for (const note of measure.notes) {
-    const startOffset = startDelay + note.offset;
-    const startTime = context.currentTime + startOffset;
-    const stopTime = startTime + note.duration;
-    const sound = createSound(measure.instrument, 0, startOffset, note.frequency);
+//   for (const note of measure.notes) {
+//     const startOffset = startDelay + note.offset;
+//     const startTime = context.currentTime + startOffset;
+//     const stopTime = startTime + note.duration;
+//     const sound = createSound(measure.instrument, 0, startOffset, note.frequency);
 
-    // @todo use sound.node.stop()
-    // @todo cleanup
-    sound._endTime = Date.now() + startDelay * 1000 + note.offset * 1000 + note.duration * 1000 - FADE_OUT_TIME;
+//     // @todo use sound.node.stop()
+//     // @todo cleanup
+//     sound._endTime = Date.now() + startDelay * 1000 + note.offset * 1000 + note.duration * 1000 - FADE_OUT_TIME;
 
-    sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
-    sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+//     sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
+//     sound._gain.gain.linearRampToValueAtTime(0, stopTime);
 
-    if (note === measure.notes[measure.notes.length - 1]) {
-      sound.node.addEventListener('ended', onEnded);
-    }
+//     if (note === measure.notes[measure.notes.length - 1]) {
+//       sound.node.addEventListener('ended', onEnded);
+//     }
 
-    sounds.push(sound);
-  }
-}
+//     sounds.push(sound);
+//   }
+// }

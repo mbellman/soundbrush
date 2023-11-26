@@ -1,8 +1,9 @@
 import { createCanvas } from './canvas';
 import * as visuals from './visuals';
 import * as audio from './audio';
-import { Measure, Settings, State, Vec2 } from './types';
+import { Settings, State, Vec2 } from './types';
 import { MIDDLE_NOTE } from './constants';
+import Sequence from './Sequence';
 import './styles.scss';
 
 const noteElements: HTMLElement[] = [];
@@ -22,9 +23,8 @@ const state: State = {
   mouse: { x: 0, y: 0 },
   dragStart: { x: 0, y: 0 },
   heldKeys: {},
-  sequence: {
-    measures: []
-  }
+  sequence: new Sequence(),
+  history: []
 };
 
 /**
@@ -103,28 +103,27 @@ function onMouseDown(e: MouseEvent) {
   // visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
-  const note = getNoteAtYCoordinate(e.clientY);
+  const noteIndex = getNoteAtYCoordinate(e.clientY);
 
   // @todo add history action
 
-  // @temporary
-  if (state.sequence.measures.length === 0) {
-    state.sequence.measures.push({
-      instrument: state.selectedInstrument,
-      notes: []
-    });
-  }
+  const { sequence } = state;
 
-  // @temporary
-  const measure = state.sequence.measures[0];
-
-  measure.notes.push({
-    frequency: audio.getFrequency(note),
-    offset: measure.notes.length * 0.2,
+  const note = sequence.createNote({
+    instrument: state.selectedInstrument,
+    frequency: audio.getFrequency(noteIndex),
+    offset: state.mouse.x / 400,
+    // @todo adjust duration as note element is stretched
     duration: 0.5
   });
 
-  noteElements.push(createNoteElement(note));
+  state.history.push({
+    action: 'add',
+    note
+  });
+
+  sequence.addNoteToChannel(state.selectedInstrument, note);
+  noteElements.push(createNoteElement(noteIndex));
 
   document.body.style.cursor = 'e-resize';
 }
@@ -188,13 +187,27 @@ function onWheel(e: WheelEvent) {
  * @internal
  */
 function undoLastAction() {
-  // @temporary
-  state.sequence.measures[0].notes.pop();
+  const lastAction = state.history.pop();
 
-  if (noteElements.length > 0) {
-    document.body.removeChild(getLastNoteElement());
-  
-    noteElements.pop();
+  switch (lastAction.action) {
+    case 'add': {
+      const { note } = lastAction;
+
+      state.sequence.removeNoteFromChannel(note.instrument, note.id);
+
+      // @temporary
+      // @todo resolve the proper note element (e.g. getElementForNoteId())
+      if (noteElements.length > 0) {
+        document.body.removeChild(getLastNoteElement());
+          
+        noteElements.pop();
+      }
+
+      break;
+    }
+    case 'remove': {
+      // @todo
+    }
   }
 }
 
@@ -202,13 +215,7 @@ function undoLastAction() {
  * @internal
  */
 function playSequence(): void {
-  audio.playSequence(state.sequence, () => {
-    console.log('sequence ended');
-
-    state.playing = false;
-  });
-
-  state.playing = true;
+  state.sequence.play();
 }
 
 export default function main() {
@@ -248,13 +255,13 @@ export default function main() {
       handleDrawAction(state.mouse);
     }
 
-    if (state.playing) {
-      const x = 0;
-      const y = 0;
-      const note = getNoteAtYCoordinate(y);
+    // if (state.playing) {
+    //   const x = 0;
+    //   const y = 0;
+    //   const note = getNoteAtYCoordinate(y);
 
-      visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
-    }
+    //   visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
+    // }
 
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(canvas, ctx, state, settings);

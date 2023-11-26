@@ -4,6 +4,8 @@ module.exports = {
   'rules': {
     'semi': [2, 'always'],
     'quotes': [2, 'single'],
-    'indent': [2, 2]
+    'indent': [2, 2, {
+      'SwitchCase': 1
+    }]
   }
 };
