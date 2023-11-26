@@ -125,6 +125,8 @@ function onMouseDown(e: MouseEvent) {
   });
 
   noteElements.push(createNoteElement(note));
+
+  document.body.style.cursor = 'e-resize';
 }
 
 /**
@@ -171,6 +173,8 @@ function onMouseUp(e: MouseEvent) {
   audio.stopCurrentSound();
 
   getLastNoteElement().style.transform = 'scaleY(1)';
+
+  document.body.style.cursor = 'default';
 }
 
 /**
