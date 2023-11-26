@@ -1,7 +1,7 @@
 import { drawCircle } from './canvas';
 import { FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
-import { lerp, timeSince } from './utilities';
+import { lerp, mod, timeSince } from './utilities';
 
 interface Color {
   r: number
@@ -113,11 +113,12 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
   const divisions = settings.divisions;
   const barHeight = window.innerHeight / divisions;
   const halfBarHeight = barHeight / 2;
-  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
+  const topNote = MIDDLE_NOTE + Math.floor(state.scroll.y / barHeight);
+  const remainder = mod(state.scroll.y, barHeight);
   const bottomNote = topNote - divisions;
 
-  for (let i = topNote; i >= bottomNote; i--) {
-    const topY = (topNote - i) * barHeight;
+  for (let i = topNote + 1; i >= bottomNote; i--) {
+    const topY = (topNote - i) * barHeight + remainder;
     const centerY = topY + halfBarHeight;
     const centerMouseDistance = Math.abs(state.mouse.y - centerY);
 

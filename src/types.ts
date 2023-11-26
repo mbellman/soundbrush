@@ -19,6 +19,7 @@ export interface Settings {
 export interface State {
   selectedInstrument: Instrument
   scroll: Vec2
+  targetScroll: Vec2
   running: boolean
   drawing: boolean
   playing: boolean

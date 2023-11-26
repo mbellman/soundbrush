@@ -4,8 +4,10 @@ import * as audio from './audio';
 import { Settings, State, Vec2 } from './types';
 import { MIDDLE_NOTE } from './constants';
 import Sequence from './Sequence';
+import { lerp, mod } from './utilities';
 import './styles.scss';
 
+let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLElement[] = [];
 
 const settings: Settings = {
@@ -16,6 +18,7 @@ const settings: Settings = {
 const state: State = {
   selectedInstrument: 'bass',
   scroll: { x: 0, y: 0 },
+  targetScroll: { x: 0, y: 0 },
   running: true,
   drawing: false,
   playing: false,
@@ -30,8 +33,10 @@ const state: State = {
  * @internal
  */
 function getNoteAtYCoordinate(y: number, quantized = true): number {
-  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
-  const noteOffset = settings.divisions * (1 - y / window.innerHeight);
+  const barHeight = window.innerHeight / settings.divisions;
+  const topNote = MIDDLE_NOTE + Math.floor(state.scroll.y / barHeight);
+  const remainder = mod(state.scroll.y, barHeight);
+  const noteOffset = settings.divisions * (1 - (y - remainder) / window.innerHeight);
   const adjustedNoteOffset = quantized ? Math.ceil(noteOffset) : noteOffset;
 
   return (topNote - settings.divisions) + adjustedNoteOffset;
@@ -56,10 +61,9 @@ const DEFAULT_NOTE_LENGTH = 20;
  */
 function createNoteElement(note: number): HTMLElement {
   const element = document.createElement('div');
-  const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteBarHeight = window.innerHeight / settings.divisions;
   const elementHeight = noteBarHeight - 10;
-  const yOffset = (topNote - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
+  const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
   const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
   element.classList.add('note');
@@ -71,7 +75,7 @@ function createNoteElement(note: number): HTMLElement {
   element.style.backgroundColor = colorString;
   element.style.boxShadow = `0 0 10px 0 ${colorString}`;
 
-  document.body.appendChild(element);
+  noteContainer.appendChild(element);
 
   return element;
 }
@@ -105,7 +109,7 @@ function onMouseDown(e: MouseEvent) {
   visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
-  const note = getNoteAtYCoordinate(e.clientY, !settings.microtonal);
+  const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
 
   // @todo add history action
 
@@ -182,7 +186,7 @@ function onMouseUp(e: MouseEvent) {
  * @internal
  */
 function onWheel(e: WheelEvent) {
-  state.scroll.y -= e.deltaY;
+  state.targetScroll.y -= e.deltaY;
 }
 
 /**
@@ -224,6 +228,12 @@ export default function main() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
 
+  noteContainer = document.createElement('div');
+
+  noteContainer.style.position = 'absolute';
+
+  document.body.appendChild(noteContainer);
+
   document.addEventListener('mousedown', onMouseDown);
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
@@ -247,6 +257,8 @@ export default function main() {
 
     state.heldKeys[e.key] = false;
   });
+
+  let lastFrameTime = Date.now();
   
   function loop() {
     if (!state.running) {
@@ -255,6 +267,18 @@ export default function main() {
 
     if (state.drawing) {
       handleDrawAction(state.mouse);
+    }
+
+    const dt = (Date.now() - lastFrameTime) / 1000;
+
+    lastFrameTime = Date.now();
+
+    // Handle scrolling
+    {
+      state.scroll.x = lerp(state.scroll.x, state.targetScroll.x, dt * 5);
+      state.scroll.y = lerp(state.scroll.y, state.targetScroll.y, dt * 5);
+
+      noteContainer.style.transform = `translateY(${state.scroll.y}px)`;
     }
 
     // if (state.playing) {
