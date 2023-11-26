@@ -1,7 +1,7 @@
 import { drawCircle } from './canvas';
 import { FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
-import { timeSince } from './utilities';
+import { lerp, timeSince } from './utilities';
 
 interface Color {
   r: number
@@ -50,7 +50,18 @@ function normalize({ x, y }: Vec2): Vec2 {
 }
 
 export function noteToColor(note: number): Color {
-  return noteToColorMap[note % 12] || { r: 255, g: 255, b: 255 };
+  const modNote = note % 12;
+  const low = Math.floor(modNote);
+  const high = Math.ceil(modNote);
+  const lowColor = noteToColorMap[low] || noteToColorMap[11];
+  const highColor = noteToColorMap[high] || noteToColorMap[0];
+  const alpha = note % 1;
+
+  return {
+    r: lerp(lowColor.r, highColor.r, alpha),
+    g: lerp(lowColor.g, highColor.g, alpha),
+    b: lerp(lowColor.b, highColor.b, alpha)
+  };
 }
 
 export function colorToRgbString({ r, g, b }: Color, factor = 1): string {
@@ -126,8 +137,8 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
       startBrightness += lastPlayTimeBrightness;
       endBrightness += lastPlayTimeBrightness;
 
-      gradient.addColorStop(0, colorToRgbString(noteToColor(i + 1), startBrightness));
-      gradient.addColorStop(1, colorToRgbString(noteToColor(i), endBrightness));
+      gradient.addColorStop(0, colorToRgbString(noteToColor(i + 0.5), startBrightness));
+      gradient.addColorStop(1, colorToRgbString(noteToColor(i - 0.5), endBrightness));
 
       ctx.fillStyle = gradient;
     } else {

@@ -9,7 +9,6 @@ import './styles.scss';
 const noteElements: HTMLElement[] = [];
 
 const settings: Settings = {
-  // @todo use blending for microtonal note colors
   microtonal: false,
   divisions: 25
 };
@@ -30,10 +29,10 @@ const state: State = {
 /**
  * @internal
  */
-function getNoteAtYCoordinate(y: number): number {
+function getNoteAtYCoordinate(y: number, quantized = true): number {
   const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteOffset = settings.divisions * (1 - y / window.innerHeight);
-  const adjustedNoteOffset = settings.microtonal ? noteOffset : Math.ceil(noteOffset);
+  const adjustedNoteOffset = quantized ? Math.ceil(noteOffset) : noteOffset;
 
   return (topNote - settings.divisions) + adjustedNoteOffset;
 }
@@ -42,10 +41,12 @@ function getNoteAtYCoordinate(y: number): number {
  * @internal
  */
 function handleDrawAction({ x, y }: Vec2) {
-  const note = getNoteAtYCoordinate(y);
+  const noteBarHeight = window.innerHeight / settings.divisions;
+  const audioNote = getNoteAtYCoordinate(y, !settings.microtonal);
+  const visualNote = getNoteAtYCoordinate(y - noteBarHeight / 2, false);
 
-  audio.setCurrentSoundNote(note);
-  // visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
+  audio.setCurrentSoundNote(audioNote);
+  visuals.saveDrawPoint(x, y, visuals.noteToColor(visualNote));
 }
 
 const DEFAULT_NOTE_LENGTH = 20;
@@ -57,15 +58,16 @@ function createNoteElement(note: number): HTMLElement {
   const element = document.createElement('div');
   const topNote = MIDDLE_NOTE + Math.round(state.scroll.y / 50);
   const noteBarHeight = window.innerHeight / settings.divisions;
-  const yOffset = (topNote - note) * noteBarHeight + 5;
-  const colorString = visuals.colorToRgbString(visuals.noteToColor(note));
+  const elementHeight = noteBarHeight - 10;
+  const yOffset = (topNote - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
+  const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
   element.classList.add('note');
 
   element.style.top = `${yOffset}px`;
   element.style.left = `${state.mouse.x}px`;
   element.style.width = `${DEFAULT_NOTE_LENGTH}px`;
-  element.style.height = `${noteBarHeight - 10}px`;
+  element.style.height = `${elementHeight}px`;
   element.style.backgroundColor = colorString;
   element.style.boxShadow = `0 0 10px 0 ${colorString}`;
 
@@ -100,18 +102,18 @@ function onMouseDown(e: MouseEvent) {
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
-  // visuals.createNewBrushStroke();
+  visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
-  const noteIndex = getNoteAtYCoordinate(e.clientY);
+  const note = getNoteAtYCoordinate(e.clientY, !settings.microtonal);
 
   // @todo add history action
 
   const { sequence } = state;
 
-  const note = sequence.createNote({
+  const sequenceNote = sequence.createNote({
     instrument: state.selectedInstrument,
-    frequency: audio.getFrequency(noteIndex),
+    frequency: audio.getFrequency(note),
     offset: state.mouse.x / 400,
     // @todo adjust duration as note element is stretched
     duration: 0.5
@@ -119,11 +121,11 @@ function onMouseDown(e: MouseEvent) {
 
   state.history.push({
     action: 'add',
-    note
+    note: sequenceNote
   });
 
-  sequence.addNoteToChannel(state.selectedInstrument, note);
-  noteElements.push(createNoteElement(noteIndex));
+  sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
+  noteElements.push(createNoteElement(note));
 
   document.body.style.cursor = 'e-resize';
 }
