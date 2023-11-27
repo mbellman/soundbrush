@@ -59,24 +59,54 @@ const DEFAULT_NOTE_LENGTH = 20;
 /**
  * @internal
  */
-function createNoteElement(note: number, id: number): HTMLElement {
+function syncNoteElementPosition(id: number) {
+  const element = noteContainer.querySelector(`[data-id="${id}"`) as HTMLElement;
+
+  if (element) {
+    const sequenceNote = state.sequence.findNote(state.selectedInstrument, id);
+    const noteBarHeight = window.innerHeight / settings.divisions;
+    const elementHeight = noteBarHeight - 10;
+    const yOffset = (MIDDLE_NOTE - sequenceNote.note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
+    const colorString = visuals.colorToRgbString(visuals.noteToColor(sequenceNote.note + (settings.microtonal ? 0.5 : 0)));
+
+    element.style.top = `${yOffset}px`;
+    element.style.backgroundColor = colorString;
+    element.style.boxShadow = `0 0 10px 0 ${colorString}`;
+  }
+}
+
+/**
+ * @internal
+ */
+function syncNoteFrequency(noteElement: HTMLElement) {
+  const noteId = Number(noteElement.getAttribute('data-id'));
+  const sequenceNote = state.sequence.findNote(state.selectedInstrument, noteId);
+  
+  if (sequenceNote) {
+    const { top: y } = noteElement.getBoundingClientRect();
+
+    sequenceNote.note = getNoteAtYCoordinate(y, !settings.microtonal);
+  }
+}
+
+/**
+ * @internal
+ */
+function createNoteElementFromId(id: number): HTMLElement {
   const element = document.createElement('div');
   const noteBarHeight = window.innerHeight / settings.divisions;
   const elementHeight = noteBarHeight - 10;
-  const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
-  const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
   element.classList.add('note');
   element.setAttribute('data-id', String(id));
 
-  element.style.top = `${yOffset}px`;
   element.style.left = `${state.mouse.x}px`;
   element.style.width = `${DEFAULT_NOTE_LENGTH}px`;
   element.style.height = `${elementHeight}px`;
-  element.style.backgroundColor = colorString;
-  element.style.boxShadow = `0 0 10px 0 ${colorString}`;
 
   noteContainer.appendChild(element);
+
+  syncNoteElementPosition(id);
 
   return element;
 }
@@ -118,7 +148,7 @@ function onMouseDown(e: MouseEvent) {
 
   const sequenceNote = sequence.createNote({
     instrument: state.selectedInstrument,
-    frequency: audio.getFrequency(note),
+    note,
     // @todo align to beat markers
     offset: state.mouse.x / 400,
     // @todo adjust duration as note element is stretched
@@ -131,7 +161,7 @@ function onMouseDown(e: MouseEvent) {
   });
 
   sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
-  noteElements.push(createNoteElement(note, sequenceNote.id));
+  noteElements.push(createNoteElementFromId(sequenceNote.id));
 
   document.body.style.cursor = 'e-resize';
 }
@@ -190,13 +220,10 @@ function onMouseUp(e: MouseEvent) {
 
   // @todo base this on selected element
   const activeNoteElement = getLastNoteElement();
-  const activeNoteId = Number(activeNoteElement.getAttribute('data-id'));
-  const activeNote = state.sequence.findNote(state.selectedInstrument, activeNoteId);
-  const finalNoteValue = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
 
   activeNoteElement.style.transform = 'scaleY(1)';
 
-  activeNote.frequency = audio.getFrequency(finalNoteValue);
+  syncNoteFrequency(activeNoteElement);
 
   document.body.style.cursor = 'default';
 }

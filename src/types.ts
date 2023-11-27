@@ -1,4 +1,4 @@
-import Sequence, { Note } from './Sequence';
+import Sequence, { SequenceNote } from './Sequence';
 import { Instrument } from './audio';
 
 export interface Vec2 {
@@ -8,7 +8,7 @@ export interface Vec2 {
 
 interface HistoryAction {
   action: 'add' | 'remove'
-  note?: Note
+  note?: SequenceNote
 }
 
 export interface Settings {
