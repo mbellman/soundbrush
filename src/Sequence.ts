@@ -43,7 +43,7 @@ export default class Sequence {
   public createNote(note: SequenceNote): SequenceNote {
     return {
       ...note,
-      id: Math.random()
+      id: generateNoteId()
     };
   }
 
