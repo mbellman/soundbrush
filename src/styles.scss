@@ -13,9 +13,11 @@ body {
   }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 10px 0;
+.note-container {
+  &.playing {
+    .note {
+      background-color: #000 !important;
+    }
   }
 }
 
@@ -23,7 +25,8 @@ body {
   animation: fade-in 0.3s;
   border-radius: 4px;
   box-shadow: 0 0 10px 0 #fff;
+  box-sizing: border-box;
   height: 16px;
   position: absolute;
-  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8), top 0.1s ease-out;
+  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8), top 0.1s ease-out, background-color 0.1s;
 }

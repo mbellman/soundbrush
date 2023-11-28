@@ -33,7 +33,7 @@ const DEFAULT_NOTE_LENGTH = 20;
 /**
  * @internal
  */
-function syncNoteElementPosition(id: number) {
+function syncNoteElement(id: number) {
   const element = noteContainer.querySelector(`[data-id="${id}"`) as HTMLElement;
 
   if (element) {
@@ -45,6 +45,7 @@ function syncNoteElementPosition(id: number) {
 
     element.style.top = `${yOffset}px`;
     element.style.backgroundColor = colorString;
+    element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
   }
 }
@@ -60,6 +61,7 @@ function syncNoteFrequency(noteElement: HTMLElement) {
     const { top: y } = noteElement.getBoundingClientRect();
 
     sequenceNote.note = getNoteAtYCoordinate(y, !settings.microtonal);
+    sequenceNote.duration = noteElement.clientWidth / 400;
   }
 }
 
@@ -80,7 +82,7 @@ function createNoteElementFromId(id: number): HTMLElement {
 
   noteContainer.appendChild(element);
 
-  syncNoteElementPosition(id);
+  syncNoteElement(id);
 
   return element;
 }
@@ -200,6 +202,7 @@ function onMouseMove(e: MouseEvent) {
       activeNoteElement.style.top = `${yOffset}px`;
       activeNoteElement.style.transform = `scaleY(${compression})`;
       activeNoteElement.style.backgroundColor = colorString;
+      activeNoteElement.style.border = `2px solid ${colorString}`;
       activeNoteElement.style.boxShadow = `0 0 10px 0 ${colorString}`;
     }
   }
@@ -291,6 +294,8 @@ function undoLastAction() {
  * @internal
  */
 function playSequence(): void {
+  noteContainer.classList.add('playing');
+
   state.sequence.play();
 }
 
@@ -300,9 +305,13 @@ export function init() {
 
   noteContainer = document.createElement('div');
 
-  noteContainer.style.position = 'absolute';
+  noteContainer.classList.add('note-container');
 
   document.body.appendChild(noteContainer);
+
+  state.sequence.on('ended', () => {
+    noteContainer.classList.remove('playing');
+  });
 
   document.addEventListener('mousedown', onMouseDown);
   document.addEventListener('mousemove', onMouseMove);

@@ -160,29 +160,3 @@ export function handleSounds() {
     }
   }
 }
-
-// export function playSequence(sequence: Sequence, onEnded?: () => void) {
-//   // @temporary
-//   const measure = sequence.measures[0];
-//   const startDelay = 0.1;
-
-//   for (const note of measure.notes) {
-//     const startOffset = startDelay + note.offset;
-//     const startTime = context.currentTime + startOffset;
-//     const stopTime = startTime + note.duration;
-//     const sound = createSound(measure.instrument, 0, startOffset, note.frequency);
-
-//     // @todo use sound.node.stop()
-//     // @todo cleanup
-//     sound._endTime = Date.now() + startDelay * 1000 + note.offset * 1000 + note.duration * 1000 - FADE_OUT_TIME;
-
-//     sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
-//     sound._gain.gain.linearRampToValueAtTime(0, stopTime);
-
-//     if (note === measure.notes[measure.notes.length - 1]) {
-//       sound.node.addEventListener('ended', onEnded);
-//     }
-
-//     sounds.push(sound);
-//   }
-// }
