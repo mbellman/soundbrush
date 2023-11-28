@@ -9,6 +9,8 @@ import { createCanvas } from './canvas';
 let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLElement[] = [];
 
+let playBar: HTMLDivElement = null;
+
 const settings: Settings = {
   microtonal: false,
   divisions: 25
@@ -299,18 +301,54 @@ function playSequence(): void {
   state.sequence.play();
 }
 
+/**
+ * @internal
+ */
+function createNoteContainer(): HTMLDivElement {
+  const container = document.createElement('div');
+
+  container.classList.add('note-container');
+
+  document.body.appendChild(container);
+  
+  return container;
+}
+
+/**
+ * @internal
+ */
+function createPlayBar(): HTMLDivElement {
+  const bar = document.createElement('div');
+
+  bar.classList.add('play-bar');
+
+  document.body.appendChild(bar);
+
+  return bar;
+}
+
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
 
-  noteContainer = document.createElement('div');
+  noteContainer = createNoteContainer();
+  playBar = createPlayBar();
 
-  noteContainer.classList.add('note-container');
+  state.sequence.on('play', () => {
+    noteContainer.classList.add('playing');
+    playBar.classList.add('visible');
+  });
 
-  document.body.appendChild(noteContainer);
+  // @todo consolidate with below
+  state.sequence.on('stop', () => {
+    noteContainer.classList.remove('playing');
+    playBar.classList.remove('visible');
+  });
 
+  // @todo consolidate with above
   state.sequence.on('ended', () => {
     noteContainer.classList.remove('playing');
+    playBar.classList.remove('visible');
   });
 
   document.addEventListener('mousedown', onMouseDown);
@@ -344,13 +382,18 @@ export function init() {
       noteContainer.style.transform = `translateY(${state.scroll.y}px)`;
     }
 
-    // if (state.playing) {
-    //   const x = 0;
-    //   const y = 0;
-    //   const note = getNoteAtYCoordinate(y);
+    if (state.sequence.isPlaying()) {
+      const playBarX = state.sequence.getPlayOffsetTime() * 400;
 
-    //   visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
-    // }
+      console.log(state.sequence.getPlayOffsetTime());
+
+      playBar.style.left = `${playBarX}px`;
+      // const x = 0;
+      // const y = 0;
+      // const note = getNoteAtYCoordinate(y);
+
+      // visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
+    }
 
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(canvas, ctx, state, settings);

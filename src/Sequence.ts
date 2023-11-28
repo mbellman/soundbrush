@@ -3,6 +3,7 @@ import * as audio from './audio';
 
 type WebAudioNode = OscillatorNode | AudioBufferSourceNode
 type SequenceEventHandler = () => void
+type SequenceEvent = 'play' | 'stop' | 'ended'
 
 // @todo use a non-repeatable ID generator
 const generateNoteId = () => Math.random();
@@ -24,6 +25,8 @@ export default class Sequence {
   private channels: Channel[] = [];
   private queuedNodes: WebAudioNode[] = [];
   private events: Record<string, SequenceEventHandler[]> = {};
+  private playing = false;
+  private playStartTime = 0;
 
   public addNoteToChannel(instrument: Instrument, note: SequenceNote): void {
     const channel = this.findChannel(instrument) || this.createChannel(instrument);
@@ -57,7 +60,15 @@ export default class Sequence {
     return this.findChannel(instrument)?.notes.find(note => note.id === id);
   }
 
-  public on(event: string, handler: () => void) {
+  public getPlayOffsetTime(): number {
+    return audio.getContext().currentTime - this.playStartTime;
+  }
+
+  public isPlaying(): boolean {
+    return this.playing;
+  }
+
+  public on(event: SequenceEvent, handler: () => void) {
     if (!this.events[event]) {
       this.events[event] = [];
     }
@@ -76,6 +87,10 @@ export default class Sequence {
   }
 
   public play(): void {
+    this.queuedNodes.length = 0;
+    this.playing = true;
+    this.playStartTime = audio.getContext().currentTime;
+
     const { currentTime } = audio.getContext();
     let lastNode: WebAudioNode;
     let highestNoteEnd = 0;
@@ -105,6 +120,8 @@ export default class Sequence {
 
     lastNode?.addEventListener('ended', () => {
       this.callEventHandlers('ended');
+
+      this.playing = false;
     });
 
     this.callEventHandlers('play');
@@ -115,10 +132,13 @@ export default class Sequence {
 
     this.callEventHandlers('stop');
 
-    // @todo
+    // @todo stop all queued nodes
+
+    this.queuedNodes.length = 0;
+    this.playing = false;
   }
 
-  private callEventHandlers(event: string): void {
+  private callEventHandlers(event: SequenceEvent): void {
     this.events[event]?.forEach(handler => handler());
   }
 }

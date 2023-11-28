@@ -28,5 +28,17 @@ body {
   box-sizing: border-box;
   height: 16px;
   position: absolute;
-  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8), top 0.1s ease-out, background-color 0.1s;
+  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8), top 0.1s ease-out, background-color 0.2s;
+}
+
+.play-bar {
+  background-color: #fff;
+  height: 100vh;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+
+  &.visible {
+    opacity: 1;
+  }
 }
