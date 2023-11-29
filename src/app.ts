@@ -65,7 +65,7 @@ function syncNoteElement(id: number) {
 /**
  * @internal
  */
-function syncNoteFrequency(noteElement: HTMLElement) {
+function syncNoteProperties(noteElement: HTMLElement) {
   const noteId = Number(noteElement.getAttribute('data-id'));
   const sequenceNote = state.sequence.findNote(state.selectedInstrument, noteId);
   
@@ -244,7 +244,7 @@ function onMouseUp(e: MouseEvent) {
 
   activeNoteElement.style.transform = 'scaleY(1)';
 
-  syncNoteFrequency(activeNoteElement);
+  syncNoteProperties(activeNoteElement);
 
   document.body.style.cursor = 'default';
 }
