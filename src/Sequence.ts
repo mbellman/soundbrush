@@ -2,7 +2,7 @@ import type { Instrument } from './audio';
 import * as audio from './audio';
 
 type WebAudioNode = OscillatorNode | AudioBufferSourceNode
-type SequenceEventHandler = (id?: number) => void
+type SequenceEventHandler = (note?: SequenceNote) => void
 type SequenceEvent = 'play' | 'stop' | 'ended' | 'note-start' | 'note-end'
 
 // @todo use a non-repeatable ID generator
@@ -118,7 +118,7 @@ export default class Sequence {
         sound.node.stop(stopTime);
 
         sound.node.addEventListener('ended', () => {
-          this.callEventHandlers('note-end', id);
+          this.callEventHandlers('note-end', sequenceNote);
         });
 
         this.queuedNodes.push(sound.node);
@@ -158,13 +158,13 @@ export default class Sequence {
     const time = this.getPlayOffsetTime();
 
     while (time > this.pendingNotes[0]?.offset) {
-      const { id } = this.pendingNotes.shift();
+      const note = this.pendingNotes.shift();
 
-      this.callEventHandlers('note-start', id);
+      this.callEventHandlers('note-start', note);
     }
   }
 
-  private callEventHandlers(event: SequenceEvent, id?: number): void {
-    this.events[event]?.forEach(handler => handler(id));
+  private callEventHandlers(event: SequenceEvent, note?: SequenceNote): void {
+    this.events[event]?.forEach(handler => handler(note));
   }
 }

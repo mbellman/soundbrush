@@ -400,14 +400,14 @@ export function init() {
     }
   });
 
-  state.sequence.on('note-start', id => {
-    const element = getNoteElementById(id);
+  state.sequence.on('note-start', note => {
+    const element = getNoteElementById(note.id);
 
     activeNoteElements.push(element);
   });
 
-  state.sequence.on('note-end', id => {
-    const element = getNoteElementById(id);
+  state.sequence.on('note-end', note => {
+    const element = getNoteElementById(note.id);
     const index = activeNoteElements.findIndex(noteElement => noteElement === element);
 
     activeNoteElements.splice(index, 1);
