@@ -94,6 +94,7 @@ export function clearUnusedDrawPointsAndBrushStrokes() {
     const { points } = brushStrokes[i];
 
     if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
+      // @todo why do we do this twice?
       points.shift();
       points.shift();
 

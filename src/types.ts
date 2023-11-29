@@ -27,5 +27,7 @@ export interface State {
   dragStart: Vec2
   heldKeys: Record<string, boolean>
   sequence: Sequence
+  lastNoteTime: number
+  lastNoteY: number
   history: HistoryAction[]
 }

@@ -28,6 +28,8 @@ const state: State = {
   dragStart: { x: 0, y: 0 },
   heldKeys: {},
   sequence: new Sequence(),
+  lastNoteY: -1,
+  lastNoteTime: -1,
   history: []
 };
 
@@ -134,6 +136,17 @@ function getNoteAtYCoordinate(y: number, quantized = true): number {
 /**
  * @internal
  */
+function getYCoordinateForNote(note: number): number {
+  const barHeight = window.innerHeight / settings.divisions;
+  const remainder = mod(state.scroll.y, barHeight);
+  const topNote = MIDDLE_NOTE + Math.floor(state.scroll.y / barHeight);
+
+  return (topNote - note) * barHeight + remainder;
+}
+
+/**
+ * @internal
+ */
 function handleDrawAction({ x, y }: Vec2) {
   const noteBarHeight = window.innerHeight / settings.divisions;
   const audioNote = getNoteAtYCoordinate(y, !settings.microtonal);
@@ -165,10 +178,8 @@ function onMouseDown(e: MouseEvent) {
   visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
+  // @todo cleanup
   const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
-
-  // @todo add history action
-
   const { sequence } = state;
 
   const sequenceNote = sequence.createNote({
@@ -388,6 +399,9 @@ export function init() {
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
     }
+
+    state.lastNoteTime = -1;
+    state.lastNoteY = -1;
   });
 
   // @todo consolidate with above
@@ -398,12 +412,21 @@ export function init() {
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
     }
+
+    state.lastNoteTime = -1;
+    state.lastNoteY = -1;
   });
 
   state.sequence.on('note-start', note => {
     const element = getNoteElementById(note.id);
+    const bounds = element.getBoundingClientRect();
 
     activeNoteElements.push(element);
+
+    state.lastNoteY = getYCoordinateForNote(note.note);
+    state.lastNoteTime = state.sequence.getPlayOffsetTime();
+
+    visuals.saveDrawPoint(bounds.x, bounds.y, visuals.noteToColor(note.note));
   });
 
   state.sequence.on('note-end', note => {
@@ -455,7 +478,27 @@ export function init() {
 
       updateActiveNoteElements();
 
-      // @todo render continuities between notes
+      // @todo cleanup/optimize
+      {
+        const nextNote = state.sequence.getNextNote();
+        let y = state.lastNoteY;
+
+        if (nextNote) {
+          const nextNoteY = getYCoordinateForNote(nextNote.note);
+          const alpha = (state.sequence.getPlayOffsetTime() - state.lastNoteTime) / (nextNote.offset - state.lastNoteTime);
+
+          y = lerp(state.lastNoteY, nextNoteY, alpha);
+        }
+        
+        const barHeight = window.innerHeight / settings.divisions;
+        const noteElementHeight = barHeight - 10;
+
+        y += barHeight / 2;
+
+        if (state.lastNoteTime > -1) {
+          visuals.saveDrawPoint(playBarX, y, visuals.noteToColor(getNoteAtYCoordinate(y)));
+        }
+      }
     }
 
     visuals.clearScreen(canvas, ctx);

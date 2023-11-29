@@ -66,6 +66,10 @@ export default class Sequence {
     return this.findChannel(instrument)?.notes.find(note => note.id === id);
   }
 
+  public getNextNote(): SequenceNote {
+    return this.pendingNotes[0];
+  }
+
   public getPlayOffsetTime(): number {
     return audio.getContext().currentTime - this.playStartTime;
   }
