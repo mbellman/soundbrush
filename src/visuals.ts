@@ -14,7 +14,7 @@ interface DrawPoint extends Vec2 {
   color: Color
 }
 
-interface BrushStroke {
+export interface BrushStroke {
   points: DrawPoint[]
 }
 
@@ -76,8 +76,8 @@ export function createNewBrushStroke(): BrushStroke {
   return brushStrokes[brushStrokes.length - 1];
 }
 
-export function saveDrawPoint(x: number, y: number, color: Color) {
-  const { points } = brushStrokes[brushStrokes.length - 1] || createNewBrushStroke();
+export function saveDrawPointToBrushStroke(brushStroke: BrushStroke, x: number, y: number, color: Color): void {
+  const { points } = brushStroke;
 
   if (points) {
     points.push({
@@ -87,6 +87,12 @@ export function saveDrawPoint(x: number, y: number, color: Color) {
       color
     });
   }
+}
+
+export function saveDrawPoint(x: number, y: number, color: Color) {
+  const brushStroke = brushStrokes[brushStrokes.length - 1] || createNewBrushStroke();
+
+  saveDrawPointToBrushStroke(brushStroke, x, y, color);
 }
 
 export function clearUnusedDrawPointsAndBrushStrokes() {

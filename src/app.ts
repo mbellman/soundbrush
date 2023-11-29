@@ -1,6 +1,7 @@
 import Sequence from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
+import type { BrushStroke } from './visuals';
 import { MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
@@ -11,6 +12,8 @@ const noteElements: HTMLDivElement[] = [];
 const activeNoteElements: HTMLDivElement[] = [];
 
 let playBar: HTMLDivElement = null;
+
+const brushStrokeMap: Record<number, BrushStroke> = {};
 
 const settings: Settings = {
   microtonal: false,
@@ -222,6 +225,7 @@ function onMouseMove(e: MouseEvent) {
 
     audio.modulateCurrentSound(modulation);
 
+    // @todo cleanup
     if (totalDelta.x > DEFAULT_NOTE_LENGTH) {
       const overflow = totalDelta.x - DEFAULT_NOTE_LENGTH;
       const activeNoteElement = getLastNoteElement();
@@ -317,12 +321,13 @@ function undoLastAction() {
 
       state.sequence.removeNoteFromChannel(note.instrument, note.id);
 
-      // @temporary
-      // @todo resolve the proper note element (e.g. getElementForNoteId())
+      // @todo cleanup (e.g. removeNoteElementById())
       if (noteElements.length > 0) {
-        noteContainer.removeChild(getLastNoteElement());
+        const element = getNoteElementById(note.id);
+        const index = noteElements.findIndex(noteElement => noteElement === element);
 
-        noteElements.pop();
+        noteContainer.removeChild(getNoteElementById(note.id));
+        noteElements.splice(index, 1);
       }
 
       break;
@@ -363,15 +368,24 @@ function createPlayBar(): HTMLDivElement {
  * @internal
  */
 function updateActiveNoteElements(): void {
+  const elementHeight = window.innerHeight / settings.divisions - 10;
   const offsetTime = state.sequence.getPlayOffsetTime();
 
   for (const element of activeNoteElements) {
+    const id = Number(element.getAttribute('data-id'));
+    const bounds = element.getBoundingClientRect();
     const start = element.offsetLeft / 400;
     const end = (element.offsetLeft + element.clientWidth) / 400;
     const duration = end - start;
     const progress = (offsetTime - start) / duration;
 
     updateNoteElementProgress(element, progress);
+
+    const x = bounds.left + bounds.width * progress;
+    const y = bounds.top + elementHeight / 2;
+    const color = visuals.noteToColor(getNoteAtYCoordinate(y));
+
+    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, y, color);
   }
 }
 
@@ -419,14 +433,13 @@ export function init() {
 
   state.sequence.on('note-start', note => {
     const element = getNoteElementById(note.id);
-    const bounds = element.getBoundingClientRect();
 
     activeNoteElements.push(element);
 
     state.lastNoteY = getYCoordinateForNote(note.note);
     state.lastNoteTime = state.sequence.getPlayOffsetTime();
 
-    visuals.saveDrawPoint(bounds.x, bounds.y, visuals.noteToColor(note.note));
+    brushStrokeMap[note.id] = visuals.createNewBrushStroke();
   });
 
   state.sequence.on('note-end', note => {
@@ -436,6 +449,8 @@ export function init() {
     activeNoteElements.splice(index, 1);
 
     updateNoteElementProgress(element, 1);
+
+    delete brushStrokeMap[note.id];
   });
 
   document.addEventListener('mousedown', onMouseDown);
@@ -478,27 +493,7 @@ export function init() {
 
       updateActiveNoteElements();
 
-      // @todo cleanup/optimize
-      {
-        const nextNote = state.sequence.getNextNote();
-        let y = state.lastNoteY;
-
-        if (nextNote) {
-          const nextNoteY = getYCoordinateForNote(nextNote.note);
-          const alpha = (state.sequence.getPlayOffsetTime() - state.lastNoteTime) / (nextNote.offset - state.lastNoteTime);
-
-          y = lerp(state.lastNoteY, nextNoteY, alpha);
-        }
-        
-        const barHeight = window.innerHeight / settings.divisions;
-        const noteElementHeight = barHeight - 10;
-
-        y += barHeight / 2;
-
-        if (state.lastNoteTime > -1) {
-          visuals.saveDrawPoint(playBarX, y, visuals.noteToColor(getNoteAtYCoordinate(y)));
-        }
-      }
+      // @todo render continuities between notes
     }
 
     visuals.clearScreen(canvas, ctx);
