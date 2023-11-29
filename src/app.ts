@@ -43,6 +43,13 @@ function getNoteElementById(id: number): HTMLDivElement {
 /**
  * @internal
  */
+function getLastNoteElement(): HTMLElement {
+  return noteElements[noteElements.length - 1];
+}
+
+/**
+ * @internal
+ */
 function syncNoteElement(id: number) {
   const element = getNoteElementById(id);
 
@@ -63,18 +70,10 @@ function syncNoteElement(id: number) {
 }
 
 /**
- * @internal
+ * @internal 
  */
-function syncNoteProperties(noteElement: HTMLElement) {
-  const noteId = Number(noteElement.getAttribute('data-id'));
-  const sequenceNote = state.sequence.findNote(state.selectedInstrument, noteId);
-  
-  if (sequenceNote) {
-    const { top: y } = noteElement.getBoundingClientRect();
-
-    sequenceNote.note = getNoteAtYCoordinate(y, !settings.microtonal);
-    sequenceNote.duration = noteElement.clientWidth / 400;
-  }
+function updateNoteElementProgress(element: HTMLDivElement, progress: number): void {
+  (element.firstChild as HTMLDivElement).style.width = `${progress * 100}%`;
 }
 
 /**
@@ -107,8 +106,16 @@ function createNoteElementFromId(id: number): HTMLDivElement {
 /**
  * @internal
  */
-function getLastNoteElement(): HTMLElement {
-  return noteElements[noteElements.length - 1];
+function syncNoteProperties(noteElement: HTMLElement) {
+  const noteId = Number(noteElement.getAttribute('data-id'));
+  const sequenceNote = state.sequence.findNote(state.selectedInstrument, noteId);
+  
+  if (sequenceNote) {
+    const { top: y } = noteElement.getBoundingClientRect();
+
+    sequenceNote.note = getNoteAtYCoordinate(y, !settings.microtonal);
+    sequenceNote.duration = noteElement.clientWidth / 400;
+  }
 }
 
 /**
@@ -353,7 +360,7 @@ function updateActiveNoteElements(): void {
     const duration = end - start;
     const progress = (offsetTime - start) / duration;
 
-    (element.firstChild as HTMLDivElement).style.width = `${progress * 100}%`;
+    updateNoteElementProgress(element, progress);
   }
 }
 
@@ -369,7 +376,7 @@ export function init() {
     playBar.classList.add('visible');
 
     for (const element of noteElements) {
-      (element.firstChild as HTMLDivElement).style.width = '0';
+      updateNoteElementProgress(element, 0);
     }
   });
 
@@ -377,12 +384,20 @@ export function init() {
   state.sequence.on('stop', () => {
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
+
+    for (const element of noteElements) {
+      updateNoteElementProgress(element, 1);
+    }
   });
 
   // @todo consolidate with above
   state.sequence.on('ended', () => {
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
+
+    for (const element of noteElements) {
+      updateNoteElementProgress(element, 1);
+    }
   });
 
   state.sequence.on('note-start', id => {
@@ -397,7 +412,7 @@ export function init() {
 
     activeNoteElements.splice(index, 1);
 
-    (element.firstChild as HTMLDivElement).style.width = '100%';
+    updateNoteElementProgress(element, 1);
   });
 
   document.addEventListener('mousedown', onMouseDown);
