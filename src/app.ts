@@ -7,7 +7,8 @@ import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 
 let noteContainer: HTMLDivElement = null;
-const noteElements: HTMLElement[] = [];
+const noteElements: HTMLDivElement[] = [];
+const activeNoteElements: HTMLDivElement[] = [];
 
 let playBar: HTMLDivElement = null;
 
@@ -35,8 +36,15 @@ const DEFAULT_NOTE_LENGTH = 20;
 /**
  * @internal
  */
+function getNoteElementById(id: number): HTMLDivElement {
+  return noteContainer.querySelector(`[data-id="${id}"]`);
+}
+
+/**
+ * @internal
+ */
 function syncNoteElement(id: number) {
-  const element = noteContainer.querySelector(`[data-id="${id}"`) as HTMLElement;
+  const element = getNoteElementById(id);
 
   if (element) {
     const sequenceNote = state.sequence.findNote(state.selectedInstrument, id);
@@ -49,6 +57,8 @@ function syncNoteElement(id: number) {
     element.style.backgroundColor = colorString;
     element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
+
+    (element.firstChild as HTMLDivElement).style.backgroundColor = colorString;
   }
 }
 
@@ -70,8 +80,10 @@ function syncNoteFrequency(noteElement: HTMLElement) {
 /**
  * @internal
  */
-function createNoteElementFromId(id: number): HTMLElement {
+function createNoteElementFromId(id: number): HTMLDivElement {
   const element = document.createElement('div');
+  const progressBar = document.createElement('div');
+
   const noteBarHeight = window.innerHeight / settings.divisions;
   const elementHeight = noteBarHeight - 10;
 
@@ -82,6 +94,9 @@ function createNoteElementFromId(id: number): HTMLElement {
   element.style.width = `${DEFAULT_NOTE_LENGTH}px`;
   element.style.height = `${elementHeight}px`;
 
+  progressBar.classList.add('note--progress');
+
+  element.appendChild(progressBar);
   noteContainer.appendChild(element);
 
   syncNoteElement(id);
@@ -206,6 +221,8 @@ function onMouseMove(e: MouseEvent) {
       activeNoteElement.style.backgroundColor = colorString;
       activeNoteElement.style.border = `2px solid ${colorString}`;
       activeNoteElement.style.boxShadow = `0 0 10px 0 ${colorString}`;
+
+      (activeNoteElement.firstChild as HTMLDivElement).style.backgroundColor = colorString;
     }
   }
 
@@ -258,7 +275,13 @@ function onKeyUp(e: KeyboardEvent) {
   }
 
   if (e.key === 'Enter') {
-    playSequence();
+    const { sequence } = state;
+
+    if (sequence.isPlaying()) {
+      sequence.stop();
+    } else {
+      sequence.play();
+    }
   }
 
   state.heldKeys[e.key] = false;
@@ -295,15 +318,6 @@ function undoLastAction() {
 /**
  * @internal
  */
-function playSequence(): void {
-  noteContainer.classList.add('playing');
-
-  state.sequence.play();
-}
-
-/**
- * @internal
- */
 function createNoteContainer(): HTMLDivElement {
   const container = document.createElement('div');
 
@@ -327,6 +341,22 @@ function createPlayBar(): HTMLDivElement {
   return bar;
 }
 
+/**
+ * @internal
+ */
+function updateActiveNoteElements(): void {
+  const offsetTime = state.sequence.getPlayOffsetTime();
+
+  for (const element of activeNoteElements) {
+    const start = element.offsetLeft / 400;
+    const end = (element.offsetLeft + element.clientWidth) / 400;
+    const duration = end - start;
+    const progress = (offsetTime - start) / duration;
+
+    (element.firstChild as HTMLDivElement).style.width = `${progress * 100}%`;
+  }
+}
+
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
@@ -337,6 +367,10 @@ export function init() {
   state.sequence.on('play', () => {
     noteContainer.classList.add('playing');
     playBar.classList.add('visible');
+
+    for (const element of noteElements) {
+      (element.firstChild as HTMLDivElement).style.width = '0';
+    }
   });
 
   // @todo consolidate with below
@@ -349,6 +383,21 @@ export function init() {
   state.sequence.on('ended', () => {
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
+  });
+
+  state.sequence.on('note-start', id => {
+    const element = getNoteElementById(id);
+
+    activeNoteElements.push(element);
+  });
+
+  state.sequence.on('note-end', id => {
+    const element = getNoteElementById(id);
+    const index = activeNoteElements.findIndex(noteElement => noteElement === element);
+
+    activeNoteElements.splice(index, 1);
+
+    (element.firstChild as HTMLDivElement).style.width = '100%';
   });
 
   document.addEventListener('mousedown', onMouseDown);
@@ -385,14 +434,13 @@ export function init() {
     if (state.sequence.isPlaying()) {
       const playBarX = state.sequence.getPlayOffsetTime() * 400;
 
-      console.log(state.sequence.getPlayOffsetTime());
-
       playBar.style.left = `${playBarX}px`;
-      // const x = 0;
-      // const y = 0;
-      // const note = getNoteAtYCoordinate(y);
 
-      // visuals.saveDrawPoint(x, y, visuals.noteToColor(note));
+      state.sequence.triggerNoteStartHandlers();
+
+      updateActiveNoteElements();
+
+      // @todo render continuities between notes
     }
 
     visuals.clearScreen(canvas, ctx);

@@ -2,8 +2,8 @@ import type { Instrument } from './audio';
 import * as audio from './audio';
 
 type WebAudioNode = OscillatorNode | AudioBufferSourceNode
-type SequenceEventHandler = () => void
-type SequenceEvent = 'play' | 'stop' | 'ended'
+type SequenceEventHandler = (id?: number) => void
+type SequenceEvent = 'play' | 'stop' | 'ended' | 'note-start' | 'note-end'
 
 // @todo use a non-repeatable ID generator
 const generateNoteId = () => Math.random();
@@ -24,6 +24,7 @@ export interface Channel {
 export default class Sequence {
   private channels: Channel[] = [];
   private queuedNodes: WebAudioNode[] = [];
+  private pendingNotes: SequenceNote[] = [];
   private events: Record<string, SequenceEventHandler[]> = {};
   private playing = false;
   private playStartTime = 0;
@@ -32,6 +33,11 @@ export default class Sequence {
     const channel = this.findChannel(instrument) || this.createChannel(instrument);
 
     channel.notes.push(note);
+
+    // @todo see if this needs to be optimized
+    channel.notes.sort((a, b) => {
+      return a.offset > b.offset ? 1 : -1;
+    });
   }
 
   public createChannel(instrument: Instrument): Channel {
@@ -68,7 +74,7 @@ export default class Sequence {
     return this.playing;
   }
 
-  public on(event: SequenceEvent, handler: () => void) {
+  public on(event: SequenceEvent, handler: SequenceEventHandler) {
     if (!this.events[event]) {
       this.events[event] = [];
     }
@@ -88,6 +94,7 @@ export default class Sequence {
 
   public play(): void {
     this.queuedNodes.length = 0;
+    this.pendingNotes.length = 0;
     this.playing = true;
     this.playStartTime = audio.getContext().currentTime;
 
@@ -97,9 +104,10 @@ export default class Sequence {
 
     for (const channel of this.channels) {
       // @todo queue N notes at a time
-      const chunk = channel.notes;
+      const chunkNotes = channel.notes;
 
-      for (const { note, offset, duration } of chunk) {
+      for (const sequenceNote of chunkNotes) {
+        const { note, offset, duration, id } = sequenceNote;
         const frequency = audio.getFrequency(note);
         const sound = audio.createSound(channel.instrument, 0, offset, frequency);
         const stopTime = currentTime + offset + duration;
@@ -109,7 +117,12 @@ export default class Sequence {
 
         sound.node.stop(stopTime);
 
+        sound.node.addEventListener('ended', () => {
+          this.callEventHandlers('note-end', id);
+        });
+
         this.queuedNodes.push(sound.node);
+        this.pendingNotes.push(sequenceNote);
 
         if (!lastNode || offset + duration > highestNoteEnd) {
           lastNode = sound.node;
@@ -132,13 +145,26 @@ export default class Sequence {
 
     this.callEventHandlers('stop');
 
-    // @todo stop all queued nodes
+    for (const node of this.queuedNodes) {
+      node.stop(currentTime);
+    }
 
     this.queuedNodes.length = 0;
+    this.pendingNotes.length = 0;
     this.playing = false;
   }
 
-  private callEventHandlers(event: SequenceEvent): void {
-    this.events[event]?.forEach(handler => handler());
+  public triggerNoteStartHandlers(): void {
+    const time = this.getPlayOffsetTime();
+
+    while (time > this.pendingNotes[0]?.offset) {
+      const { id } = this.pendingNotes.shift();
+
+      this.callEventHandlers('note-start', id);
+    }
+  }
+
+  private callEventHandlers(event: SequenceEvent, id?: number): void {
+    this.events[event]?.forEach(handler => handler(id));
   }
 }
