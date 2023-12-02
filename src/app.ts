@@ -2,7 +2,7 @@ import Sequence from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
 import type { BrushStroke } from './visuals';
-import { MIDDLE_NOTE } from './constants';
+import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
@@ -16,8 +16,9 @@ let playBar: HTMLDivElement = null;
 const brushStrokeMap: Record<number, BrushStroke> = {};
 
 const settings: Settings = {
+  divisions: 25,
   microtonal: false,
-  divisions: 25
+  useSnapping: true
 };
 
 const state: State = {
@@ -25,7 +26,7 @@ const state: State = {
   scroll: { x: 0, y: 0 },
   targetScroll: { x: 0, y: 0 },
   running: true,
-  drawing: false,
+  mousedown: false,
   playing: false,
   mouse: { x: 0, y: 0 },
   dragStart: { x: 0, y: 0 },
@@ -35,8 +36,6 @@ const state: State = {
   lastNoteTime: -1,
   history: []
 };
-
-const DEFAULT_NOTE_LENGTH = 20;
 
 /**
  * @internal
@@ -62,13 +61,16 @@ function syncNoteElement(id: number) {
     const sequenceNote = state.sequence.findNote(state.selectedInstrument, id);
     const noteBarHeight = window.innerHeight / settings.divisions;
     const elementHeight = noteBarHeight - 10;
+    const xOffset = sequenceNote.offset * 400;
     const yOffset = (MIDDLE_NOTE - sequenceNote.note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
     const colorString = visuals.colorToRgbString(visuals.noteToColor(sequenceNote.note + (settings.microtonal ? 0.5 : 0)));
 
     element.style.top = `${yOffset}px`;
+    element.style.left = `${xOffset}px`;
     element.style.backgroundColor = colorString;
     element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
+    element.style.width = `${sequenceNote.duration * DEFAULT_NOTE_LENGTH}px`;
 
     (element.firstChild as HTMLDivElement).style.backgroundColor = colorString;
   }
@@ -163,7 +165,7 @@ function handleDrawAction({ x, y }: Vec2) {
  * @internal
  */
 function onMouseDown(e: MouseEvent) {
-  state.drawing = true;
+  state.mousedown = true;
  
   state.mouse = {
     x: e.clientX,
@@ -183,15 +185,19 @@ function onMouseDown(e: MouseEvent) {
 
   // @todo cleanup
   const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
-  const { sequence } = state;
+  const { scroll, mouse, sequence } = state;
+
+  const offset = settings.useSnapping
+    ? (Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x) / 400
+    : mouse.x / 400;
+
+  const duration = 0.5 * (settings.useSnapping ? DEFAULT_BEAT_LENGTH / DEFAULT_NOTE_LENGTH : 1);
 
   const sequenceNote = sequence.createNote({
     instrument: state.selectedInstrument,
     note,
-    // @todo align to beat markers
-    offset: state.mouse.x / 400,
-    // @todo adjust duration as note element is stretched
-    duration: 0.5
+    offset,
+    duration
   });
 
   state.history.push({
@@ -209,7 +215,7 @@ function onMouseDown(e: MouseEvent) {
  * @internal
  */
 function onMouseMove(e: MouseEvent) {
-  if (state.drawing) {
+  if (state.mousedown) {
     const lastDelta: Vec2 = {
       x: e.clientX - state.mouse.x,
       y: e.clientY - state.mouse.y
@@ -256,7 +262,7 @@ function onMouseMove(e: MouseEvent) {
  * @internal
  */
 function onMouseUp(e: MouseEvent) {
-  state.drawing = false;
+  state.mousedown = false;
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
@@ -468,7 +474,7 @@ export function init() {
       return;
     }
 
-    if (state.drawing) {
+    if (state.mousedown) {
       handleDrawAction(state.mouse);
     }
 
@@ -498,7 +504,8 @@ export function init() {
 
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(canvas, ctx, state, settings);
-    visuals.render(canvas, ctx);
+    visuals.drawNotePreview(canvas, ctx, state, settings);
+    visuals.renderBrushStrokes(canvas, ctx);
 
     audio.handleSounds();
 

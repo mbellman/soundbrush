@@ -12,8 +12,9 @@ interface HistoryAction {
 }
 
 export interface Settings {
-  microtonal: boolean
   divisions: number
+  microtonal: boolean
+  useSnapping: boolean
 }
 
 export interface State {
@@ -21,7 +22,7 @@ export interface State {
   scroll: Vec2
   targetScroll: Vec2
   running: boolean
-  drawing: boolean
+  mousedown: boolean
   playing: boolean
   mouse: Vec2
   dragStart: Vec2

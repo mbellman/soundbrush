@@ -1,5 +1,5 @@
 import { drawCircle } from './canvas';
-import { FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
+import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod, timeSince } from './utilities';
 
@@ -129,7 +129,7 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
     const centerY = topY + halfBarHeight;
     const centerMouseDistance = Math.abs(state.mouse.y - centerY);
 
-    if (state.drawing && centerMouseDistance < halfBarHeight) {
+    if (state.mousedown && centerMouseDistance < halfBarHeight) {
       // Playing note!
       lastNotePlayTimeMap[i] = Date.now();
     }
@@ -169,7 +169,30 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 }
 
-export function render(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
+  if (state.mousedown) {
+    return;
+  }
+
+  const { mouse, scroll } = state;
+  const barHeight = window.innerHeight / settings.divisions;
+  const noteElementHeight = barHeight - 10;
+  const opacity = 0.3 + 0.2 * Math.sin(Date.now() / 100);
+
+  const x = settings.useSnapping
+    ? Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x
+    : mouse.x;
+
+  // @todo snap when not microtonal
+  const y = state.mouse.y - noteElementHeight / 2;
+
+  const noteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+
+  ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+  ctx.fillRect(x, state.mouse.y - noteElementHeight / 2, noteLength, noteElementHeight);
+}
+
+export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   for (const { points } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
