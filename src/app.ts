@@ -1,6 +1,7 @@
 import Sequence from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
+import type { Instrument } from './audio';
 import type { BrushStroke } from './visuals';
 import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
@@ -40,8 +41,8 @@ const state: State = {
 /**
  * @internal
  */
-function getNoteElementById(id: number): HTMLDivElement {
-  return noteContainer.querySelector(`[data-id="${id}"]`);
+function findNoteElement(instrument: Instrument, id: number): HTMLDivElement {
+  return noteContainer.querySelector(`[data-instrument="${instrument}"][data-id="${id}"]`);
 }
 
 /**
@@ -54,11 +55,11 @@ function getLastNoteElement(): HTMLElement {
 /**
  * @internal
  */
-function syncNoteElement(id: number) {
-  const element = getNoteElementById(id);
+function syncNoteElement(instrument: Instrument, id: number) {
+  const element = findNoteElement(instrument, id);
 
   if (element) {
-    const sequenceNote = state.sequence.findNote(state.selectedInstrument, id);
+    const sequenceNote = state.sequence.findNote(instrument, id);
     const noteBarHeight = window.innerHeight / settings.divisions;
     const elementHeight = noteBarHeight - 10;
     const xOffset = sequenceNote.offset * 400;
@@ -86,7 +87,7 @@ function updateNoteElementProgress(element: HTMLDivElement, progress: number): v
 /**
  * @internal
  */
-function createNoteElementFromId(id: number): HTMLDivElement {
+function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   const element = document.createElement('div');
   const progressBar = document.createElement('div');
 
@@ -94,6 +95,8 @@ function createNoteElementFromId(id: number): HTMLDivElement {
   const elementHeight = noteBarHeight - 10;
 
   element.classList.add('note');
+
+  element.setAttribute('data-instrument', instrument);
   element.setAttribute('data-id', String(id));
 
   element.style.height = `${elementHeight}px`;
@@ -103,7 +106,7 @@ function createNoteElementFromId(id: number): HTMLDivElement {
   element.appendChild(progressBar);
   noteContainer.appendChild(element);
 
-  syncNoteElement(id);
+  syncNoteElement(instrument, id);
 
   return element;
 }
@@ -112,8 +115,9 @@ function createNoteElementFromId(id: number): HTMLDivElement {
  * @internal
  */
 function syncNoteProperties(noteElement: HTMLElement) {
+  const instrument = noteElement.getAttribute('data-instrument') as Instrument;
   const noteId = Number(noteElement.getAttribute('data-id'));
-  const sequenceNote = state.sequence.findNote(state.selectedInstrument, noteId);
+  const sequenceNote = state.sequence.findNote(instrument, noteId);
   
   if (sequenceNote) {
     const { top: y } = noteElement.getBoundingClientRect();
@@ -162,7 +166,7 @@ function handleDrawAction({ x, y }: Vec2) {
 /**
  * @internal
  */
-function onMouseDown(e: MouseEvent) {
+function onCanvasMouseDown(e: MouseEvent) {
   state.mousedown = true;
  
   state.mouse = {
@@ -204,9 +208,20 @@ function onMouseDown(e: MouseEvent) {
   });
 
   sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
-  noteElements.push(createNoteElementFromId(sequenceNote.id));
+  noteElements.push(createNoteElement(state.selectedInstrument, sequenceNote.id));
 
   document.body.style.cursor = 'e-resize';
+}
+
+/**
+ * @internal
+ */
+function onNoteMouseDown(e: MouseEvent) {
+  const element = e.target as HTMLElement;
+  const instrument = element.getAttribute('data-instrument');
+  const id = element.getAttribute('data-id');
+
+  // @todo
 }
 
 /**
@@ -335,12 +350,12 @@ function undoLastAction() {
 
       state.sequence.removeNoteFromChannel(note.instrument, note.id);
 
-      // @todo cleanup (e.g. removeNoteElementById())
+      // @todo cleanup (e.g. removeNoteElement())
       if (noteElements.length > 0) {
-        const element = getNoteElementById(note.id);
+        const element = findNoteElement(note.instrument, note.id);
         const index = noteElements.findIndex(noteElement => noteElement === element);
 
-        noteContainer.removeChild(getNoteElementById(note.id));
+        noteContainer.removeChild(findNoteElement(note.instrument, note.id));
         noteElements.splice(index, 1);
       }
 
@@ -446,7 +461,7 @@ export function init() {
   });
 
   state.sequence.on('note-start', note => {
-    const element = getNoteElementById(note.id);
+    const element = findNoteElement(note.instrument, note.id);
 
     activeNoteElements.push(element);
 
@@ -457,7 +472,7 @@ export function init() {
   });
 
   state.sequence.on('note-end', note => {
-    const element = getNoteElementById(note.id);
+    const element = findNoteElement(note.instrument, note.id);
     const index = activeNoteElements.findIndex(noteElement => noteElement === element);
 
     activeNoteElements.splice(index, 1);
@@ -467,7 +482,16 @@ export function init() {
     delete brushStrokeMap[note.id];
   });
 
-  document.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousedown', e => {
+    const element = e.target as HTMLElement;
+
+    if (element === canvas) {
+      onCanvasMouseDown(e);
+    } else if (element.classList.contains('note')) {
+      onNoteMouseDown(e);
+    }
+  });
+
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
   document.addEventListener('wheel', onWheel);
