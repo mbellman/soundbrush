@@ -169,6 +169,9 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 }
 
+let lastNotePreviewX = 0;
+let lastNotePreviewY = 0;
+
 export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
   if (state.mousedown) {
     return;
@@ -176,20 +179,27 @@ export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingC
 
   const { mouse, scroll } = state;
   const barHeight = window.innerHeight / settings.divisions;
+  const scrollRemainder = mod(state.scroll.y, barHeight);
   const noteElementHeight = barHeight - 10;
-  const opacity = 0.3 + 0.2 * Math.sin(Date.now() / 100);
+  const opacity = 0.2 + 0.1 * Math.sin(Date.now() / 200);
 
-  const x = settings.useSnapping
+  const targetX = settings.useSnapping
     ? Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x
     : mouse.x;
 
-  // @todo snap when not microtonal
-  const y = state.mouse.y - noteElementHeight / 2;
+  const targetY = settings.microtonal
+    ? mouse.y - noteElementHeight / 2
+    : Math.floor(mouse.y / barHeight) * barHeight + scrollRemainder + 5;
 
   const noteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+  const x = lerp(lastNotePreviewX, targetX, 0.25);
+  const y = lerp(lastNotePreviewY, targetY, 0.25);
+
+  lastNotePreviewX = x;
+  lastNotePreviewY = y;
 
   ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-  ctx.fillRect(x, state.mouse.y - noteElementHeight / 2, noteLength, noteElementHeight);
+  ctx.fillRect(x, y, noteLength, noteElementHeight);
 }
 
 export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
