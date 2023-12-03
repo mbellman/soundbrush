@@ -67,10 +67,10 @@ function syncNoteElement(id: number) {
 
     element.style.top = `${yOffset}px`;
     element.style.left = `${xOffset}px`;
+    element.style.width = `${sequenceNote.duration * 400}px`;
     element.style.backgroundColor = colorString;
     element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
-    element.style.width = `${sequenceNote.duration * DEFAULT_NOTE_LENGTH}px`;
 
     (element.firstChild as HTMLDivElement).style.backgroundColor = colorString;
   }
@@ -96,8 +96,6 @@ function createNoteElementFromId(id: number): HTMLDivElement {
   element.classList.add('note');
   element.setAttribute('data-id', String(id));
 
-  element.style.left = `${state.mouse.x}px`;
-  element.style.width = `${DEFAULT_NOTE_LENGTH}px`;
   element.style.height = `${elementHeight}px`;
 
   progressBar.classList.add('note--progress');
@@ -191,7 +189,7 @@ function onMouseDown(e: MouseEvent) {
     ? (Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x) / 400
     : mouse.x / 400;
 
-  const duration = 0.5 * (settings.useSnapping ? DEFAULT_BEAT_LENGTH / DEFAULT_NOTE_LENGTH : 1);
+  const duration = (settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH) / 400;
 
   const sequenceNote = sequence.createNote({
     instrument: state.selectedInstrument,
@@ -232,8 +230,17 @@ function onMouseMove(e: MouseEvent) {
     audio.modulateCurrentSound(modulation);
 
     // @todo cleanup
-    if (totalDelta.x > DEFAULT_NOTE_LENGTH) {
-      const overflow = totalDelta.x - DEFAULT_NOTE_LENGTH;
+    const activeNoteElement = getLastNoteElement();
+    const { left, top, bottom } = activeNoteElement.getBoundingClientRect();
+    const baseNoteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+    const baseRightEdge = left + baseNoteLength;
+
+    if (
+      state.mouse.x > baseRightEdge ||
+      state.mouse.y < top ||
+      state.mouse.y > bottom
+    ) {
+      const overflow = state.mouse.x - baseRightEdge;
       const activeNoteElement = getLastNoteElement();
       const compression = Math.pow(1 - overflow / (overflow + 2000), 2);
 
@@ -242,8 +249,9 @@ function onMouseMove(e: MouseEvent) {
       const elementHeight = noteBarHeight - 10;
       const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
       const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
+      const noteLength = Math.max(baseNoteLength, baseNoteLength + overflow);
 
-      activeNoteElement.style.width = `${totalDelta.x}px`;
+      activeNoteElement.style.width = `${noteLength}px`;
       activeNoteElement.style.top = `${yOffset}px`;
       activeNoteElement.style.transform = `scaleY(${compression})`;
       activeNoteElement.style.backgroundColor = colorString;
