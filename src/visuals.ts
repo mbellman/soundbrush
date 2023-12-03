@@ -209,23 +209,17 @@ export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderi
       const pm1 = points[i - 1];
       const p = points[i];
       const lifetime = timeSince(p.time) / FADE_OUT_TIME;
-      const lightness = Math.min(1, 1 - lifetime);
-      const radius = Math.max(0, 10 + 30 * lifetime);
+      const radius = Math.max(0, 20 * (1 - lifetime));
 
       if (pm2 && pm1) {
-        const startLifetime = timeSince(pm2.time) / FADE_OUT_TIME;
-        const endLifetime = timeSince(p.time) / FADE_OUT_TIME;
-        const startLightness = Math.min(1, 1 - startLifetime);
-        const endLightness = Math.min(1, 1 - endLifetime);
-
         const { x: dx, y: dy } = normalize({
           x: p.x - pm1.x,
           y: p.y - pm1.y
         });
 
         const gradient = ctx.createLinearGradient(pm2.x - dx * radius, pm2.y - dy * radius, p.x + dx * radius, p.y + dy * radius);
-        const startColor = `rgb(${pm2.color.r * startLightness}, ${pm2.color.g * startLightness}, ${pm2.color.b * startLightness})`;
-        const endColor = `rgb(${p.color.r * endLightness}, ${p.color.g * endLightness}, ${p.color.b * endLightness})`;
+        const startColor = `rgb(${pm2.color.r}, ${pm2.color.g}, ${pm2.color.b})`;
+        const endColor = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
         gradient.addColorStop(0, startColor);
         gradient.addColorStop(1, endColor);
@@ -257,7 +251,7 @@ export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderi
 
         drawCircle(ctx, p.x, p.y, gradient, radius);
       } else {
-        const colorValue = `rgb(${p.color.r * lightness}, ${p.color.g * lightness}, ${p.color.b * lightness})`;
+        const colorValue = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
         drawCircle(ctx, p.x, p.y, colorValue, radius);
       }
