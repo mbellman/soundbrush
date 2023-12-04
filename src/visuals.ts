@@ -96,18 +96,22 @@ export function saveDrawPoint(x: number, y: number, color: Color) {
 }
 
 export function clearUnusedDrawPointsAndBrushStrokes() {
-  for (let i = 0; i < brushStrokes.length; i++) {
+  let i = 0;
+
+  while (i < brushStrokes.length) {
     const { points } = brushStrokes[i];
 
     if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
-      // @todo why do we do this twice?
       points.shift();
-      // points.shift();
 
       if (points.length === 0) {
         brushStrokes.splice(i, 1);
+
+        continue;
       }
     }
+
+    i++;
   }
 }
 
@@ -225,23 +229,6 @@ export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRendering
         gradient.addColorStop(1, endColor);
 
         ctx.strokeStyle = gradient;
-
-        const midpoint = {
-          x: (pm2.x + p.x) / 2,
-          y: (pm2.y + p.y) / 2,
-        };
-
-        const control = {
-          x: pm1.x - midpoint.x,
-          y: pm1.y - midpoint.y
-        };
-
-        control.x *= 2;
-        control.y *= 2;
-
-        control.x += midpoint.x;
-        control.y += midpoint.y;
-
         ctx.lineWidth = radius * 2;
 
         ctx.beginPath();
