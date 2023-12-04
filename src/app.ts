@@ -296,6 +296,8 @@ function onMouseMove(e: MouseEvent) {
       const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
       const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
+      // visuals.saveDrawPoint(state.mouse.x, state.mouse.y, visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
+
       const dragOverflow = settings.useSnapping
         ? Math.round(overflow / baseNoteLength) * baseNoteLength
         : overflow;
@@ -356,6 +358,10 @@ function onWheel(e: WheelEvent) {
  */
 function onKeyDown(e: KeyboardEvent) {
   state.heldKeys[e.key] = true;
+
+  // if (e.key === ' ') {
+  //   state.running = false;
+  // }
 }
 
 /**

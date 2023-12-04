@@ -102,7 +102,7 @@ export function clearUnusedDrawPointsAndBrushStrokes() {
     if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
       // @todo why do we do this twice?
       points.shift();
-      points.shift();
+      // points.shift();
 
       if (points.length === 0) {
         brushStrokes.splice(i, 1);
@@ -246,7 +246,7 @@ export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderi
 
         ctx.beginPath();
         ctx.moveTo(pm2.x, pm2.y);
-        ctx.quadraticCurveTo(control.x, control.y, p.x, p.y);
+        ctx.quadraticCurveTo(pm1.x, pm1.y, p.x, p.y);
         ctx.stroke();
 
         drawCircle(ctx, p.x, p.y, gradient, radius);

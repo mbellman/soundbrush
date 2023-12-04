@@ -4,9 +4,24 @@ body {
   user-select: none;
 }
 
-@keyframes fade-in {
+@keyframes pop-in {
   0% {
-    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
   }
   100% {
     opacity: 1;
@@ -22,7 +37,7 @@ body {
 }
 
 .note {
-  animation: fade-in 0.3s;
+  animation: pop-in 0.3s, twinkle 2s ease-in-out infinite;
   border-radius: 4px;
   box-shadow: 0 0 10px 0 #fff;
   box-sizing: border-box;
