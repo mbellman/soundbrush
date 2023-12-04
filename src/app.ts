@@ -14,6 +14,9 @@ const activeNoteElements: HTMLDivElement[] = [];
 
 let playBar: HTMLDivElement = null;
 
+/**
+ * @todo description
+ */
 const brushStrokeMap: Record<number, BrushStroke> = {};
 
 const settings: Settings = {
@@ -35,6 +38,7 @@ const state: State = {
   sequence: new Sequence(),
   lastNoteY: -1,
   lastNoteTime: -1,
+  selectedNoteElement: null,
   history: []
 };
 
@@ -202,13 +206,16 @@ function onCanvasMouseDown(e: MouseEvent) {
     duration
   });
 
+  sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
+
   state.history.push({
     action: 'add',
     note: sequenceNote
   });
 
-  sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
-  noteElements.push(createNoteElement(state.selectedInstrument, sequenceNote.id));
+  state.selectedNoteElement = createNoteElement(state.selectedInstrument, sequenceNote.id);
+
+  noteElements.push(state.selectedNoteElement);
 
   document.body.style.cursor = 'e-resize';
 }
@@ -217,9 +224,13 @@ function onCanvasMouseDown(e: MouseEvent) {
  * @internal
  */
 function onNoteMouseDown(e: MouseEvent) {
-  const element = e.target as HTMLElement;
+  state.mousedown = true;
+
+  const element = e.target as HTMLDivElement;
   const instrument = element.getAttribute('data-instrument');
   const id = element.getAttribute('data-id');
+
+  state.selectedNoteElement = element;
 
   // @todo
 }
@@ -245,8 +256,8 @@ function onMouseMove(e: MouseEvent) {
     audio.modulateCurrentSound(modulation);
 
     // @todo cleanup
-    const activeNoteElement = getLastNoteElement();
-    const { left, top, bottom } = activeNoteElement.getBoundingClientRect();
+    const { selectedNoteElement } = state;
+    const { left, top, bottom } = selectedNoteElement.getBoundingClientRect();
     const baseNoteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
     const baseRightEdge = left + baseNoteLength;
 
@@ -255,8 +266,8 @@ function onMouseMove(e: MouseEvent) {
       state.mouse.y < top ||
       state.mouse.y > bottom
     ) {
+      console.log('eh???');
       const overflow = state.mouse.x - baseRightEdge;
-      const activeNoteElement = getLastNoteElement();
       const compression = Math.pow(1 - overflow / (overflow + 2000), 2);
 
       const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
@@ -271,14 +282,14 @@ function onMouseMove(e: MouseEvent) {
 
       const noteLength = Math.max(baseNoteLength, baseNoteLength + dragOverflow);
 
-      activeNoteElement.style.width = `${noteLength}px`;
-      activeNoteElement.style.top = `${yOffset}px`;
-      activeNoteElement.style.transform = `scaleY(${compression})`;
-      activeNoteElement.style.backgroundColor = colorString;
-      activeNoteElement.style.border = `2px solid ${colorString}`;
-      activeNoteElement.style.boxShadow = `0 0 10px 0 ${colorString}`;
+      selectedNoteElement.style.width = `${noteLength}px`;
+      selectedNoteElement.style.top = `${yOffset}px`;
+      selectedNoteElement.style.transform = `scaleY(${compression})`;
+      selectedNoteElement.style.backgroundColor = colorString;
+      selectedNoteElement.style.border = `2px solid ${colorString}`;
+      selectedNoteElement.style.boxShadow = `0 0 10px 0 ${colorString}`;
 
-      (activeNoteElement.firstChild as HTMLDivElement).style.backgroundColor = colorString;
+      (selectedNoteElement.firstChild as HTMLDivElement).style.backgroundColor = colorString;
     }
   }
 
@@ -295,12 +306,11 @@ function onMouseUp(e: MouseEvent) {
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
-  // @todo base this on selected element
-  const activeNoteElement = getLastNoteElement();
+  const { selectedNoteElement } = state;
 
-  activeNoteElement.style.transform = 'scaleY(1)';
+  selectedNoteElement.style.transform = 'scaleY(1)';
 
-  syncNoteProperties(activeNoteElement);
+  syncNoteProperties(selectedNoteElement);
 
   document.body.style.cursor = 'default';
 }

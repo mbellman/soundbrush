@@ -30,5 +30,6 @@ export interface State {
   sequence: Sequence
   lastNoteTime: number
   lastNoteY: number
+  selectedNoteElement: HTMLDivElement
   history: HistoryAction[]
 }

@@ -115,6 +115,10 @@ export function startNewSound(instrument: Instrument, note: number) {
 }
 
 export function modulateCurrentSound(modulation: number) {
+  if (!currentSound) {
+    return;
+  }
+
   const unitModulation = Math.sin(context.currentTime * 50);
   const modulationFactor = modulation * Math.min(1, timeSince(currentSound._startTime) / 1000);
 
@@ -130,6 +134,10 @@ export function stopModulatingCurrentSound() {
 }
 
 export function setCurrentSoundNote(note: number) {
+  if (!currentSound) {
+    return;
+  }
+
   currentSound.node.frequency.value = getFrequency(note);
   currentSoundBaseFrequency = currentSound.node.frequency.value;
 }
