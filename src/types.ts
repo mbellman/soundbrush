@@ -31,5 +31,7 @@ export interface State {
   lastNoteTime: number
   lastNoteY: number
   selectedNoteElement: HTMLDivElement
+  selectedNoteStartX: number
+  selectedNoteAction: 'move' | 'resize'
   history: HistoryAction[]
 }

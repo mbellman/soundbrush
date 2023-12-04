@@ -39,6 +39,8 @@ const state: State = {
   lastNoteY: -1,
   lastNoteTime: -1,
   selectedNoteElement: null,
+  selectedNoteStartX: 0,
+  selectedNoteAction: 'move',
   history: []
 };
 
@@ -47,13 +49,6 @@ const state: State = {
  */
 function findNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   return noteContainer.querySelector(`[data-instrument="${instrument}"][data-id="${id}"]`);
-}
-
-/**
- * @internal
- */
-function getLastNoteElement(): HTMLElement {
-  return noteElements[noteElements.length - 1];
 }
 
 /**
@@ -127,7 +122,10 @@ function syncNoteProperties(noteElement: HTMLElement) {
     const { top: y } = noteElement.getBoundingClientRect();
 
     sequenceNote.note = getNoteAtYCoordinate(y, !settings.microtonal);
+    sequenceNote.offset = noteElement.offsetLeft / 400;
     sequenceNote.duration = noteElement.clientWidth / 400;
+
+    state.sequence.sortChannelNotes(instrument);
   }
 }
 
@@ -171,23 +169,26 @@ function handleDrawAction({ x, y }: Vec2) {
  * @internal
  */
 function onCanvasMouseDown(e: MouseEvent) {
-  state.mousedown = true;
+  // @todo factor
+  {
+    state.mousedown = true;
  
-  state.mouse = {
-    x: e.clientX,
-    y: e.clientY
-  };
+    state.mouse = {
+      x: e.clientX,
+      y: e.clientY
+    };
 
-  state.dragStart = {
-    x: e.clientX,
-    y: e.clientY
-  };
+    state.dragStart = {
+      x: e.clientX,
+      y: e.clientY
+    };
+  }
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
+  audio.startNewSound(state.selectedInstrument, 0);
 
   // visuals.createNewBrushStroke();
-  audio.startNewSound(state.selectedInstrument, 0);
 
   // @todo cleanup
   const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
@@ -214,6 +215,8 @@ function onCanvasMouseDown(e: MouseEvent) {
   });
 
   state.selectedNoteElement = createNoteElement(state.selectedInstrument, sequenceNote.id);
+  state.selectedNoteStartX = state.selectedNoteElement.offsetLeft;
+  state.selectedNoteAction = 'resize';
 
   noteElements.push(state.selectedNoteElement);
 
@@ -224,15 +227,33 @@ function onCanvasMouseDown(e: MouseEvent) {
  * @internal
  */
 function onNoteMouseDown(e: MouseEvent) {
-  state.mousedown = true;
+  // @todo factor
+  {
+    state.mousedown = true;
+
+    state.mouse = {
+      x: e.clientX,
+      y: e.clientY
+    };
+  
+    state.dragStart = {
+      x: e.clientX,
+      y: e.clientY
+    };
+  }
 
   const element = e.target as HTMLDivElement;
-  const instrument = element.getAttribute('data-instrument');
-  const id = element.getAttribute('data-id');
+
+  audio.stopModulatingCurrentSound();
+  audio.stopCurrentSound();
+  audio.startNewSound(state.selectedInstrument, 0);
 
   state.selectedNoteElement = element;
+  state.selectedNoteStartX = element.offsetLeft;
+  // @todo use 'resize' if selecting near the right edge of the note
+  state.selectedNoteAction = 'move';
 
-  // @todo
+  // visuals.createNewBrushStroke();
 }
 
 /**
@@ -262,14 +283,13 @@ function onMouseMove(e: MouseEvent) {
     const baseRightEdge = left + baseNoteLength;
 
     if (
+      state.mouse.x < left ||
       state.mouse.x > baseRightEdge ||
       state.mouse.y < top ||
       state.mouse.y > bottom
     ) {
-      console.log('eh???');
       const overflow = state.mouse.x - baseRightEdge;
       const compression = Math.pow(1 - overflow / (overflow + 2000), 2);
-
       const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
       const noteBarHeight = window.innerHeight / settings.divisions;
       const elementHeight = noteBarHeight - 10;
@@ -282,7 +302,16 @@ function onMouseMove(e: MouseEvent) {
 
       const noteLength = Math.max(baseNoteLength, baseNoteLength + dragOverflow);
 
-      selectedNoteElement.style.width = `${noteLength}px`;
+      if (state.selectedNoteAction === 'resize') {
+        selectedNoteElement.style.width = `${noteLength}px`;
+      } else if (state.selectedNoteAction === 'move') {
+        const targetX = settings.useSnapping
+          ? Math.round((state.selectedNoteStartX + totalDelta.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH
+          : state.mouse.x;
+
+        selectedNoteElement.style.left = `${targetX}px`;
+      }
+      
       selectedNoteElement.style.top = `${yOffset}px`;
       selectedNoteElement.style.transform = `scaleY(${compression})`;
       selectedNoteElement.style.backgroundColor = colorString;

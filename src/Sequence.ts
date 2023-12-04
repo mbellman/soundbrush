@@ -34,10 +34,7 @@ export default class Sequence {
 
     channel.notes.push(note);
 
-    // @todo see if this needs to be optimized
-    channel.notes.sort((a, b) => {
-      return a.offset > b.offset ? 1 : -1;
-    });
+    this.sortChannelNotes(instrument);
   }
 
   public createChannel(instrument: Instrument): Channel {
@@ -86,16 +83,6 @@ export default class Sequence {
     this.events[event].push(handler);
   }
 
-  public removeNoteFromChannel(instrument: Instrument, id: number): void {
-    const channel = this.findChannel(instrument);
-
-    if (channel) {
-      const index = channel.notes.findIndex(note => note.id === id);
-
-      channel.notes.splice(index, 1);
-    }
-  }
-
   public play(): void {
     this.queuedNodes.length = 0;
     this.pendingNotes.length = 0;
@@ -111,7 +98,7 @@ export default class Sequence {
       const chunkNotes = channel.notes;
 
       for (const sequenceNote of chunkNotes) {
-        const { note, offset, duration, id } = sequenceNote;
+        const { note, offset, duration } = sequenceNote;
         const frequency = audio.getFrequency(note);
         const sound = audio.createSound(channel.instrument, 0, offset, frequency);
         const stopTime = currentTime + offset + duration;
@@ -142,6 +129,27 @@ export default class Sequence {
     });
 
     this.callEventHandlers('play');
+  }
+
+  public removeNoteFromChannel(instrument: Instrument, id: number): void {
+    const channel = this.findChannel(instrument);
+
+    if (channel) {
+      const index = channel.notes.findIndex(note => note.id === id);
+
+      channel.notes.splice(index, 1);
+    }
+  }
+
+  public sortChannelNotes(instrument: Instrument): void {
+    const channel = this.findChannel(instrument);
+
+    if (channel) {
+      // @todo see if this needs to be optimized
+      channel.notes.sort((a, b) => {
+        return a.offset > b.offset ? 1 : -1;
+      });
+    }
   }
 
   public stop(): void {
