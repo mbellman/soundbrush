@@ -160,7 +160,7 @@ function handleDrawAction({ x, y }: Vec2) {
   const visualNote = getNoteAtYCoordinate(y - noteBarHeight / 2, false);
 
   audio.setCurrentSoundNote(audioNote);
-  visuals.saveDrawPoint(x, y, visuals.noteToColor(visualNote));
+  // visuals.saveDrawPoint(x, y, visuals.noteToColor(visualNote));
 }
 
 /**
@@ -182,7 +182,7 @@ function onCanvasMouseDown(e: MouseEvent) {
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
-  visuals.createNewBrushStroke();
+  // visuals.createNewBrushStroke();
   audio.startNewSound(state.selectedInstrument, 0);
 
   // @todo cleanup
@@ -264,7 +264,12 @@ function onMouseMove(e: MouseEvent) {
       const elementHeight = noteBarHeight - 10;
       const yOffset = (MIDDLE_NOTE - note) * noteBarHeight + (settings.microtonal ? -elementHeight / 2 : 5);
       const colorString = visuals.colorToRgbString(visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
-      const noteLength = Math.max(baseNoteLength, baseNoteLength + overflow);
+
+      const dragOverflow = settings.useSnapping
+        ? Math.round(overflow / baseNoteLength) * baseNoteLength
+        : overflow;
+
+      const noteLength = Math.max(baseNoteLength, baseNoteLength + dragOverflow);
 
       activeNoteElement.style.width = `${noteLength}px`;
       activeNoteElement.style.top = `${yOffset}px`;

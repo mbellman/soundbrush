@@ -29,7 +29,11 @@ body {
   height: 16px;
   overflow: hidden;
   position: absolute;
-  transition: transform 0.3s cubic-bezier(.47,3.0,.41,.8), top 0.1s ease-out, background-color 0.2s;
+  transition:
+    transform 0.3s cubic-bezier(.47,3.0,.41,.8),
+    top 0.1s ease-out,
+    width 0.075s ease-out,
+    background-color 0.2s;
 
   &--progress {
     height: 100%;
