@@ -189,7 +189,7 @@ export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingC
 
   const targetY = settings.microtonal
     ? mouse.y - noteElementHeight / 2
-    : Math.floor(mouse.y / barHeight) * barHeight + scrollRemainder + 5;
+    : Math.floor((mouse.y - scrollRemainder) / barHeight) * barHeight + scrollRemainder + 5;
 
   const noteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
   const x = lerp(lastNotePreviewX, targetX, 0.25);
