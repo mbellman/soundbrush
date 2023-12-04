@@ -202,7 +202,7 @@ export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingC
   ctx.fillRect(x, y, noteLength, noteElementHeight);
 }
 
-export function renderBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   for (const { points } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];

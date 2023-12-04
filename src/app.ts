@@ -89,6 +89,7 @@ function updateNoteElementProgress(element: HTMLDivElement, progress: number): v
 function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   const element = document.createElement('div');
   const progressBar = document.createElement('div');
+  const resizer = document.createElement('div');
 
   const noteBarHeight = window.innerHeight / settings.divisions;
   const elementHeight = noteBarHeight - 10;
@@ -101,8 +102,11 @@ function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   element.style.height = `${elementHeight}px`;
 
   progressBar.classList.add('note--progress');
+  resizer.classList.add('note--resizer');
 
   element.appendChild(progressBar);
+  element.appendChild(resizer);
+
   noteContainer.appendChild(element);
 
   syncNoteElement(instrument, id);
@@ -168,6 +172,15 @@ function handleDrawAction({ x, y }: Vec2) {
 /**
  * @internal
  */
+function setCursor(cursor: string): void {
+  const canvas = document.querySelector('.canvas') as HTMLElement;
+
+  canvas.style.cursor = cursor;
+}
+
+/**
+ * @internal
+ */
 function onCanvasMouseDown(e: MouseEvent) {
   // @todo factor
   {
@@ -220,7 +233,20 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   noteElements.push(state.selectedNoteElement);
 
-  document.body.style.cursor = 'e-resize';
+  setCursor('e-resize');
+}
+
+/**
+ * @internal
+ */
+function getNoteElementFromEvent(e: MouseEvent): HTMLDivElement {
+  let element = e.target as HTMLDivElement;
+
+  while (element.className !== 'note') {
+    element = element.parentElement as HTMLDivElement;
+  }
+
+  return element;
 }
 
 /**
@@ -242,7 +268,13 @@ function onNoteMouseDown(e: MouseEvent) {
     };
   }
 
-  const element = e.target as HTMLDivElement;
+  const element = getNoteElementFromEvent(e);
+
+  if (!element) {
+    return;
+  }
+
+  const bounds = element.getBoundingClientRect();
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
@@ -250,8 +282,16 @@ function onNoteMouseDown(e: MouseEvent) {
 
   state.selectedNoteElement = element;
   state.selectedNoteStartX = element.offsetLeft;
-  // @todo use 'resize' if selecting near the right edge of the note
-  state.selectedNoteAction = 'move';
+
+  if (state.mouse.x > bounds.right - 10) {
+    state.selectedNoteAction = 'resize';
+
+    setCursor('e-resize');
+  } else {
+    state.selectedNoteAction = 'move';
+
+    setCursor('grabbing');
+  }
 
   // visuals.createNewBrushStroke();
 }
@@ -342,8 +382,7 @@ function onMouseUp(e: MouseEvent) {
   selectedNoteElement.style.transform = 'scaleY(1)';
 
   syncNoteProperties(selectedNoteElement);
-
-  document.body.style.cursor = 'default';
+  setCursor('pointer');
 }
 
 /**
@@ -533,11 +572,15 @@ export function init() {
   });
 
   document.addEventListener('mousedown', e => {
+    if (state.sequence.isPlaying()) {
+      return;
+    }
+
     const element = e.target as HTMLElement;
 
     if (element === canvas) {
       onCanvasMouseDown(e);
-    } else if (element.classList.contains('note')) {
+    } else if (element.className.startsWith('note')) {
       onNoteMouseDown(e);
     }
   });
@@ -586,8 +629,12 @@ export function init() {
 
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(canvas, ctx, state, settings);
-    visuals.drawNotePreview(canvas, ctx, state, settings);
-    visuals.renderBrushStrokes(canvas, ctx);
+
+    if (!state.sequence.isPlaying()) {
+      visuals.drawNotePreview(canvas, ctx, state, settings);
+    }
+
+    visuals.drawBrushStrokes(canvas, ctx);
 
     audio.handleSounds();
 

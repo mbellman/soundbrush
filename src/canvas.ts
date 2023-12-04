@@ -2,6 +2,8 @@ export function createCanvas() {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
+  canvas.classList.add('canvas');
+
   ctx.fillStyle = '#000';
 
   ctx.fillRect(0, 0, canvas.width, canvas.height);
