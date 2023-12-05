@@ -54,14 +54,16 @@ body {
     top 0.1s ease-out,
     left 0.1s ease-out,
     width 0.075s ease-out,
-    background-color 0.2s;
+    background-color 0.2s,
+    border 0.2s;
 
   &:active {
     cursor: grabbing;
+    transform: scale(0.98) !important;
   }
 
   &:hover {
-    animation: pop-in 0.3s;
+    border: 2px solid #fff !important;
   }
 
   &--progress {
