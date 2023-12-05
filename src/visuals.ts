@@ -15,6 +15,7 @@ interface DrawPoint extends Vec2 {
 }
 
 export interface BrushStroke {
+  radius: number
   points: DrawPoint[]
 }
 
@@ -68,8 +69,9 @@ export function colorToRgbString({ r, g, b }: Color, factor = 1): string {
   return `rgb(${r * factor}, ${g * factor}, ${b * factor})`;
 }
 
-export function createNewBrushStroke(): BrushStroke {
+export function createNewBrushStroke({ radius = 20 } = {}): BrushStroke {
   brushStrokes.push({
+    radius,
     points: []
   });
 
@@ -102,6 +104,7 @@ export function clearUnusedDrawPointsAndBrushStrokes() {
     const { points } = brushStrokes[i];
 
     if (timeSince(points[0]?.time) > FADE_OUT_TIME) {
+      points.shift();
       points.shift();
 
       if (points.length === 0) {
@@ -207,13 +210,13 @@ export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingC
 }
 
 export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-  for (const { points } of brushStrokes) {
+  for (const { points, radius: baseRadius } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
       const pm1 = points[i - 1];
       const p = points[i];
       const lifetime = timeSince(p.time) / FADE_OUT_TIME;
-      const radius = Math.max(0, 20 * (1 - lifetime));
+      const radius = Math.max(0, baseRadius * (1 - lifetime));
 
       if (pm2 && pm1) {
         const { x: dx, y: dy } = normalize({

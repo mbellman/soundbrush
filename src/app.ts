@@ -1,4 +1,4 @@
-import Sequence from './Sequence';
+import Sequence, { SequenceNote } from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
 import type { Instrument } from './audio';
@@ -17,7 +17,7 @@ let playBar: HTMLDivElement = null;
 /**
  * @todo description
  */
-const brushStrokeMap: Record<number, BrushStroke> = {};
+const brushStrokeMap: Record<string | number, BrushStroke> = {};
 
 const settings: Settings = {
   divisions: 25,
@@ -485,6 +485,33 @@ function createPlayBar(): HTMLDivElement {
 /**
  * @internal
  */
+function predictNextNote(note: number, beatsAheadLimit: number): SequenceNote {
+  const offsetTime = state.sequence.getPlayOffsetTime();
+  const offsetLimit = offsetTime + (beatsAheadLimit * DEFAULT_BEAT_LENGTH) / 400;
+  const pendingNotes = state.sequence.getPendingNotes();
+  let minimumDistance = Number.POSITIVE_INFINITY;
+  let nextNote: SequenceNote = null;
+  
+  // @todo improve
+  for (const sequenceNote of pendingNotes) {
+    if (sequenceNote.offset > offsetLimit) {
+      break;
+    }
+
+    const distance = Math.abs(sequenceNote.note - note);
+
+    if (distance < minimumDistance) {
+      nextNote = sequenceNote;
+      minimumDistance = distance;
+    }
+  }
+
+  return nextNote;
+}
+
+/**
+ * @internal
+ */
 function updateActiveNoteElements(): void {
   const elementHeight = window.innerHeight / settings.divisions - 10;
   const offsetTime = state.sequence.getPlayOffsetTime();
@@ -501,9 +528,26 @@ function updateActiveNoteElements(): void {
 
     const x = bounds.left + bounds.width * progress;
     const y = bounds.top + elementHeight / 2;
-    const color = visuals.noteToColor(getNoteAtYCoordinate(y));
+    const note = getNoteAtYCoordinate(y);
+    const color = visuals.noteToColor(note);
 
     visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, y, color);
+
+    // @todo improve
+    const nextNote = predictNextNote(note, element.clientWidth / DEFAULT_BEAT_LENGTH);
+
+    if (nextNote) {
+      const nextY = getYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
+      const nextColor = visuals.noteToColor(nextNote.note);
+      const nextNoteProgress = Math.pow((offsetTime - start) / (nextNote.offset - start), 2);
+      const previewY = lerp(y, nextY, nextNoteProgress);
+
+      nextColor.r *= nextNoteProgress;
+      nextColor.g *= nextNoteProgress;
+      nextColor.b *= nextNoteProgress;
+  
+      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], x, previewY, nextColor);
+    }
   }
 }
 
@@ -558,6 +602,8 @@ export function init() {
     state.lastNoteTime = state.sequence.getPlayOffsetTime();
 
     brushStrokeMap[note.id] = visuals.createNewBrushStroke();
+    // @todo purge empty next-note brush strokes
+    brushStrokeMap[`next${note.id}`] = visuals.createNewBrushStroke({ radius: 10 });
   });
 
   state.sequence.on('note-end', note => {
@@ -615,6 +661,10 @@ export function init() {
       noteContainer.style.transform = `translateY(${state.scroll.y}px)`;
     }
 
+    visuals.clearScreen(canvas, ctx);
+    visuals.drawNoteBars(canvas, ctx, state, settings);
+    visuals.drawBrushStrokes(canvas, ctx);
+
     if (state.sequence.isPlaying()) {
       const playBarX = state.sequence.getPlayOffsetTime() * 400;
 
@@ -625,16 +675,9 @@ export function init() {
       updateActiveNoteElements();
 
       // @todo render continuities between notes
+    } else {
+      visuals.drawNotePreview(canvas, ctx, state, settings);      
     }
-
-    visuals.clearScreen(canvas, ctx);
-    visuals.drawNoteBars(canvas, ctx, state, settings);
-
-    if (!state.sequence.isPlaying()) {
-      visuals.drawNotePreview(canvas, ctx, state, settings);
-    }
-
-    visuals.drawBrushStrokes(canvas, ctx);
 
     audio.handleSounds();
 

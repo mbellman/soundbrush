@@ -67,6 +67,10 @@ export default class Sequence {
     return this.pendingNotes[0];
   }
 
+  public getPendingNotes(): SequenceNote[] {
+    return this.pendingNotes;
+  }
+
   public getPlayOffsetTime(): number {
     return audio.getContext().currentTime - this.playStartTime;
   }
