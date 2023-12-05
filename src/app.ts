@@ -366,6 +366,8 @@ function onMouseMove(e: MouseEvent) {
 
   state.mouse.x = e.clientX;
   state.mouse.y = e.clientY;
+
+  visuals.spawnSparkles(state);
 }
 
 /**
@@ -664,6 +666,7 @@ export function init() {
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(canvas, ctx, state, settings);
     visuals.drawBrushStrokes(canvas, ctx);
+    visuals.drawSparkles(ctx, state);
 
     if (state.sequence.isPlaying()) {
       const playBarX = state.sequence.getPlayOffsetTime() * 400;

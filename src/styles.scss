@@ -57,13 +57,14 @@ body {
     background-color 0.2s,
     border 0.2s;
 
-  &:active {
-    cursor: grabbing;
-    transform: scale(0.98) !important;
+  &:hover {
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
   }
 
-  &:hover {
+  &:active {
+    cursor: grabbing;
     border: 2px solid #fff !important;
+    transform: scale(0.98) !important;
   }
 
   &--progress {

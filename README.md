@@ -5,7 +5,9 @@ Draw things and make music.
 
 * don't place notes when focusing back in the window
 * window resize corrections
+* window scroll brush stroke/particle adjustments
 
+* resize from the back
 * multi-note selections
 * * undo support
 
@@ -14,5 +16,4 @@ Draw things and make music.
 * measures
 * serialization
 
-* sparkle effects
 * beat lines

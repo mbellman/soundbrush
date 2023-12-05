@@ -250,3 +250,48 @@ export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRendering
 
   clearUnusedDrawPointsAndBrushStrokes();
 }
+
+interface Sparkle {
+  spawnTime: number
+  position: Vec2
+  radius: number
+}
+
+const sparkles: Sparkle[] = [];
+
+export function spawnSparkles(state: State): void {
+  if (Math.random() < 0.9) {
+    sparkles.push({
+      spawnTime: Date.now(),
+      position: {
+        x: state.mouse.x,
+        y: state.mouse.y,
+      },
+      radius: Math.random() * 2
+    });
+  }
+}
+
+export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void {
+  let i = 0;
+
+  // Remove dead particles
+  while (i < sparkles.length) {
+    if (timeSince(sparkles[i].spawnTime) >= 1000) {
+      sparkles.splice(i, 1);
+    } else {
+      i++;
+    }
+  }
+
+  // Draw particles
+  for (const { spawnTime, position, radius } of sparkles) {
+    const lifetime = timeSince(spawnTime) / 1000;
+    const alpha = 1 - lifetime * lifetime;
+    const x = position.x + Math.sin(spawnTime + Date.now() / 500) * 20 * (1 - lifetime);
+    const y = position.y + Math.cos(spawnTime + Date.now() / 900) * 20 * (1 - lifetime);
+    const { r, g, b } = noteToColor(spawnTime / 100);
+
+    drawCircle(ctx, x, y, `rgba(${r}, ${g}, ${b}, ${alpha})`, radius * (1 - lifetime));
+  }
+}
