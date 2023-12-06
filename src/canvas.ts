@@ -13,9 +13,7 @@ export function createCanvas() {
     canvas.style.width = '100vw';
     canvas.style.height = '100vh';
 
-    ctx.fillStyle = '#000';
-
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    clearCanvas(canvas, ctx);
   }
 
   window.addEventListener('resize', fitCanvasToWindow);
@@ -23,6 +21,12 @@ export function createCanvas() {
   fitCanvasToWindow();
 
   return canvas;
+}
+
+export function clearCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+  ctx.fillStyle = '#000';
+
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 export function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, color: string | CanvasGradient, radius: number) {

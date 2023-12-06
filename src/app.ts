@@ -7,6 +7,7 @@ import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constan
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
+import { createSynthCreator } from './synth';
 
 let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLDivElement[] = [];
@@ -381,9 +382,12 @@ function onMouseUp(e: MouseEvent) {
 
   const { selectedNoteElement } = state;
 
-  selectedNoteElement.style.transform = 'scaleY(1)';
+  if (selectedNoteElement) {
+    selectedNoteElement.style.transform = 'scaleY(1)';
 
-  syncNoteProperties(selectedNoteElement);
+    syncNoteProperties(selectedNoteElement);
+  }
+
   setCursor('pointer');
 }
 
@@ -553,6 +557,7 @@ function updateActiveNoteElements(): void {
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
+  const synthCreator = createSynthCreator();
 
   noteContainer = createNoteContainer();
   playBar = createPlayBar();
@@ -689,4 +694,5 @@ export function init() {
   loop();
 
   document.body.appendChild(canvas);
+  document.body.appendChild(synthCreator);
 }

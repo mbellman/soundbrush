@@ -4,7 +4,7 @@ import { timeSince } from './utilities';
 let context: AudioContext = null;
 let compressor: DynamicsCompressorNode = null;
 
-interface Sound {
+export interface Sound {
   node: OscillatorNode
   _gain: GainNode
   _startTime: number
@@ -55,8 +55,8 @@ function createWaveForm(instrument: Instrument): PeriodicWave {
  * @internal
  */
 function fadeOutSound(sound: Sound) {
-  currentSound._gain.gain.value = currentSound._gain.gain.value;
-  currentSound._gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT_TIME / 1000);
+  sound._gain.gain.value = sound._gain.gain.value;
+  sound._gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT_TIME / 1000);
 }
 
 /**
@@ -150,6 +150,14 @@ export function stopCurrentSound() {
   currentSound._endTime = Date.now();
 
   fadeOutSound(currentSound);
+}
+
+export function endSound(sound: Sound) {
+  sound._endTime = Date.now();
+
+  fadeOutSound(sound);
+
+  sound.node.stop(context.currentTime + FADE_OUT_TIME);
 }
 
 export function handleSounds() {

@@ -5,7 +5,7 @@ Draw things and make music.
 
 * don't place notes when focusing back in the window
 * window resize corrections
-* window scroll brush stroke/particle adjustments
+* window scroll brush stroke/particle repositioning
 * note continuity closure
 
 * resize from the back
@@ -13,6 +13,9 @@ Draw things and make music.
 * * undo support
 
 * custom instruments
+* scrolling to the right
 * multiple channels
 * measures
 * serialization
+
+* note continuity previews
