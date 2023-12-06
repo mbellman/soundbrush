@@ -543,12 +543,9 @@ function updateActiveNoteElements(): void {
       const nextColor = visuals.noteToColor(nextNote.note);
       const nextNoteProgress = Math.pow((offsetTime - start) / (nextNote.offset - start), 2);
       const previewY = lerp(y, nextY, nextNoteProgress);
+      const blendedColor = visuals.lerpColor(color, nextColor, nextNoteProgress);
 
-      nextColor.r *= nextNoteProgress;
-      nextColor.g *= nextNoteProgress;
-      nextColor.b *= nextNoteProgress;
-  
-      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], x, previewY, nextColor);
+      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], x, previewY, blendedColor);
     }
   }
 }
@@ -617,6 +614,7 @@ export function init() {
     updateNoteElementProgress(element, 1);
 
     delete brushStrokeMap[note.id];
+    delete brushStrokeMap[`next${note.id}`];
   });
 
   document.addEventListener('mousedown', e => {

@@ -50,6 +50,14 @@ function normalize({ x, y }: Vec2): Vec2 {
   };
 }
 
+export function lerpColor(a: Color, b: Color, alpha: number): Color {
+  return {
+    r: lerp(a.r, b.r, alpha),
+    g: lerp(a.g, b.g, alpha),
+    b: lerp(a.b, b.b, alpha)
+  };
+}
+
 export function noteToColor(note: number): Color {
   const modNote = note % 12;
   const low = Math.floor(modNote);
@@ -58,11 +66,7 @@ export function noteToColor(note: number): Color {
   const highColor = noteToColorMap[high] || noteToColorMap[0];
   const alpha = note % 1;
 
-  return {
-    r: lerp(lowColor.r, highColor.r, alpha),
-    g: lerp(lowColor.g, highColor.g, alpha),
-    b: lerp(lowColor.b, highColor.b, alpha)
-  };
+  return lerpColor(lowColor, highColor, alpha);
 }
 
 export function colorToRgbString({ r, g, b }: Color, factor = 1): string {
@@ -186,19 +190,20 @@ export function drawBeatLines(ctx: CanvasRenderingContext2D, state: State, setti
 
   const mouseYRatio = clamp(state.mouse.y / window.innerHeight, 0, 1);
   const totalBeats = window.innerWidth / DEFAULT_BEAT_LENGTH;
+  const focusX = state.sequence.isPlaying() ? mod(state.sequence.getPlayOffsetTime() * 400 - state.scroll.x, window.innerWidth) : state.mouse.x;
 
   for (let i = 0; i < totalBeats; i++) {
     const x = i * DEFAULT_BEAT_LENGTH;
     const isMeasureMarker = i % 4 === 0;
-    const alpha = Math.pow(0.95 - Math.abs(x - state.mouse.x) / window.innerWidth, 6);
+    const alpha = Math.pow(0.95 - Math.abs(x - focusX) / window.innerWidth, 6);
     const gradient = ctx.createLinearGradient(x * dpr, 0, x * dpr, window.innerHeight * dpr);
-    const { r, g, b }: Color = isMeasureMarker ? { r: 255, g: 200, b: 0 } : { r: 255, g: 255, b: 255 };
+    const { r, g, b }: Color = isMeasureMarker ? { r: 255, g: 200, b: 0 } : { r: 100, g: 100, b: 100 };
 
     gradient.addColorStop(Math.max(0, mouseYRatio - 0.5), `rgba(${r}, ${g}, ${b}, 0)`);
     gradient.addColorStop(mouseYRatio, `rgba(${r}, ${g}, ${b}, ${alpha})`);
     gradient.addColorStop(Math.min(1, mouseYRatio + 0.5), `rgba(${r}, ${g}, ${b}, 0)`);
 
-    ctx.lineWidth = isMeasureMarker ? 4 : 1;
+    ctx.lineWidth = isMeasureMarker ? 2 : 1;
     ctx.strokeStyle = gradient;
 
     ctx.beginPath();
