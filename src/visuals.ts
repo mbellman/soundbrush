@@ -185,17 +185,21 @@ export function drawNoteBars(ctx: CanvasRenderingContext2D, state: State, settin
   ctx.fillRect(0, 0, window.innerWidth * dpr, window.innerHeight * dpr);
 }
 
+let beatLinesFocusX = 0;
+
 export function drawBeatLines(ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
   const dpr = window.devicePixelRatio;
 
   const mouseYRatio = clamp(state.mouse.y / window.innerHeight, 0, 1);
   const totalBeats = window.innerWidth / DEFAULT_BEAT_LENGTH;
-  const focusX = state.sequence.isPlaying() ? mod(state.sequence.getPlayOffsetTime() * 400 - state.scroll.x, window.innerWidth) : state.mouse.x;
+  const targetFocusX = state.sequence.isPlaying() ? mod(state.sequence.getPlayOffsetTime() * 400 - state.scroll.x, window.innerWidth) : state.mouse.x;
+
+  beatLinesFocusX = lerp(beatLinesFocusX, targetFocusX, state.sequence.isPlaying() ? 1 : 0.02);
 
   for (let i = 0; i < totalBeats; i++) {
     const x = i * DEFAULT_BEAT_LENGTH;
     const isMeasureMarker = i % 4 === 0;
-    const alpha = Math.pow(0.95 - Math.abs(x - focusX) / window.innerWidth, 6);
+    const alpha = Math.pow(0.95 - Math.abs(x - beatLinesFocusX) / window.innerWidth, 6);
     const gradient = ctx.createLinearGradient(x * dpr, 0, x * dpr, window.innerHeight * dpr);
     const { r, g, b }: Color = isMeasureMarker ? { r: 255, g: 200, b: 0 } : { r: 100, g: 100, b: 100 };
 
