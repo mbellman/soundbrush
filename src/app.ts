@@ -664,8 +664,9 @@ export function init() {
     }
 
     visuals.clearScreen(canvas, ctx);
-    visuals.drawNoteBars(canvas, ctx, state, settings);
-    visuals.drawBrushStrokes(canvas, ctx);
+    visuals.drawNoteBars(ctx, state, settings);
+    visuals.drawBeatLines(ctx, state, settings);
+    visuals.drawBrushStrokes(ctx);
     visuals.drawSparkles(ctx, state);
 
     if (state.sequence.isPlaying()) {
@@ -679,7 +680,7 @@ export function init() {
 
       // @todo render continuities between notes
     } else {
-      visuals.drawNotePreview(canvas, ctx, state, settings);      
+      visuals.drawNotePreview(ctx, state, settings);      
     }
 
     audio.handleSounds();

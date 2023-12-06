@@ -1,7 +1,7 @@
 import { drawCircle } from './canvas';
 import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
-import { lerp, mod, timeSince } from './utilities';
+import { clamp, lerp, mod, timeSince } from './utilities';
 
 interface Color {
   r: number
@@ -120,10 +120,12 @@ export function clearUnusedDrawPointsAndBrushStrokes() {
 
 export function clearScreen(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);  
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
+export function drawNoteBars(ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
+  const dpr = window.devicePixelRatio;
+
   const divisions = settings.divisions;
   const barHeight = window.innerHeight / divisions;
   const halfBarHeight = barHeight / 2;
@@ -135,6 +137,7 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
     const topY = (topNote - i) * barHeight + remainder;
     const centerY = topY + halfBarHeight;
     const centerMouseDistance = Math.abs(state.mouse.y - centerY);
+    const waveBrightness = 0.05 + Math.sin(Date.now() / 400 + i * 0.5) * 0.05;
 
     if (state.mousedown && centerMouseDistance < halfBarHeight) {
       // Playing note!
@@ -148,41 +151,72 @@ export function drawNoteBars(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
       let startBrightness = 0.8 - Math.min(0.8, Math.sqrt(barTopDistance / 1000));
       let endBrightness = 0.8 - Math.min(0.8, Math.sqrt(barBottomDistance / 1000));
 
-      gradient.addColorStop(0, colorToRgbString(noteToColor(i + 0.5), startBrightness));
-      gradient.addColorStop(1, colorToRgbString(noteToColor(i - 0.5), endBrightness));
+      gradient.addColorStop(0, colorToRgbString(noteToColor(i + 0.5), startBrightness + waveBrightness));
+      gradient.addColorStop(1, colorToRgbString(noteToColor(i - 0.5), endBrightness + waveBrightness));
 
       ctx.fillStyle = gradient;
     } else {
       const strumHighlightBrightness = 0.5 * Math.max(0, 1 - timeSince(lastNotePlayTimeMap[i] || 0) / 500);
       let brightness = 0.8 - Math.min(0.8, Math.sqrt(centerMouseDistance / 1000));
 
-      brightness += strumHighlightBrightness;
+      brightness += strumHighlightBrightness + waveBrightness;
 
       ctx.fillStyle = colorToRgbString(noteToColor(i), brightness);
     }
 
-    ctx.fillRect(0, topY, window.innerWidth, barHeight + 1);
+    ctx.fillRect(0, topY * dpr, window.innerWidth * dpr, dpr * (barHeight + 1));
   }
 
   // @todo strum highlight when playing microtonal notes
 
-  const gradient = ctx.createLinearGradient(0, window.innerHeight / 2, window.innerWidth, window.innerHeight / 2);
+  const gradient = ctx.createLinearGradient(0, dpr * window.innerHeight / 2, dpr * window.innerWidth, dpr * window.innerHeight / 2);
 
-  gradient.addColorStop(0, '#000');
-  gradient.addColorStop(0.05, 'rgba(0, 0, 0, 0.5)');
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+  gradient.addColorStop(0.1, 'rgba(0, 0, 0, 0.5)');
+  gradient.addColorStop(0.9, 'rgba(0, 0, 0, 0.5)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
 
   ctx.fillStyle = gradient;
 
-  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.fillRect(0, 0, window.innerWidth * dpr, window.innerHeight * dpr);
+}
+
+export function drawBeatLines(ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
+  const dpr = window.devicePixelRatio;
+
+  const mouseYRatio = clamp(state.mouse.y / window.innerHeight, 0, 1);
+  const totalBeats = window.innerWidth / DEFAULT_BEAT_LENGTH;
+
+  for (let i = 0; i < totalBeats; i++) {
+    const x = i * DEFAULT_BEAT_LENGTH;
+    const isMeasureMarker = i % 4 === 0;
+    const alpha = Math.pow(0.95 - Math.abs(x - state.mouse.x) / window.innerWidth, 6);
+    const gradient = ctx.createLinearGradient(x * dpr, 0, x * dpr, window.innerHeight * dpr);
+    const { r, g, b }: Color = isMeasureMarker ? { r: 255, g: 200, b: 0 } : { r: 255, g: 255, b: 255 };
+
+    gradient.addColorStop(Math.max(0, mouseYRatio - 0.5), `rgba(${r}, ${g}, ${b}, 0)`);
+    gradient.addColorStop(mouseYRatio, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+    gradient.addColorStop(Math.min(1, mouseYRatio + 0.5), `rgba(${r}, ${g}, ${b}, 0)`);
+
+    ctx.lineWidth = isMeasureMarker ? 4 : 1;
+    ctx.strokeStyle = gradient;
+
+    ctx.beginPath();
+    ctx.moveTo(x * dpr, 0);
+    ctx.lineTo(x * dpr, window.innerHeight * dpr);
+    ctx.stroke();
+  }
 }
 
 let lastNotePreviewX = 0;
 let lastNotePreviewY = 0;
 
-export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
+export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, settings: Settings) {
   if (state.mousedown) {
     return;
   }
+
+  const dpr = window.devicePixelRatio;
 
   const { mouse, scroll } = state;
   const barHeight = window.innerHeight / settings.divisions;
@@ -206,10 +240,12 @@ export function drawNotePreview(canvas: HTMLCanvasElement, ctx: CanvasRenderingC
   lastNotePreviewY = y;
 
   ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-  ctx.fillRect(x, y, noteLength, noteElementHeight);
+  ctx.fillRect(x * dpr, y * dpr, noteLength * dpr, noteElementHeight * dpr);
 }
 
-export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+export function drawBrushStrokes(ctx: CanvasRenderingContext2D) {
+  const dpr = window.devicePixelRatio;
+
   for (const { points, radius: baseRadius } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
@@ -224,7 +260,7 @@ export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRendering
           y: p.y - pm1.y
         });
 
-        const gradient = ctx.createLinearGradient(pm2.x - dx * radius, pm2.y - dy * radius, p.x + dx * radius, p.y + dy * radius);
+        const gradient = ctx.createLinearGradient(dpr * (pm2.x - dx * radius), dpr * (pm2.y - dy * radius), dpr * (p.x + dx * radius), dpr * (p.y + dy * radius));
         const startColor = `rgb(${pm2.color.r}, ${pm2.color.g}, ${pm2.color.b})`;
         const endColor = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
@@ -232,18 +268,18 @@ export function drawBrushStrokes(canvas: HTMLCanvasElement, ctx: CanvasRendering
         gradient.addColorStop(1, endColor);
 
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = radius * 2;
+        ctx.lineWidth = radius * 2 * dpr;
 
         ctx.beginPath();
-        ctx.moveTo(pm2.x, pm2.y);
-        ctx.quadraticCurveTo(pm1.x, pm1.y, p.x, p.y);
+        ctx.moveTo(pm2.x * dpr, pm2.y * dpr);
+        ctx.quadraticCurveTo(pm1.x * dpr, pm1.y * dpr, p.x * dpr, p.y * dpr);
         ctx.stroke();
 
-        drawCircle(ctx, p.x, p.y, gradient, radius);
+        drawCircle(ctx, p.x * dpr, p.y * dpr, gradient, radius * dpr);
       } else {
         const colorValue = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
-        drawCircle(ctx, p.x, p.y, colorValue, radius);
+        drawCircle(ctx, p.x * dpr, p.y * dpr, colorValue, radius * dpr);
       }
     }
   }
@@ -273,6 +309,8 @@ export function spawnSparkles(state: State): void {
 }
 
 export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void {
+  const dpr = window.devicePixelRatio;
+
   let i = 0;
 
   // Remove dead particles
@@ -292,6 +330,6 @@ export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void 
     const y = position.y + Math.cos(spawnTime + Date.now() / 900) * 20 * (1 - lifetime);
     const { r, g, b } = noteToColor(spawnTime / 100);
 
-    drawCircle(ctx, x, y, `rgba(${r}, ${g}, ${b}, ${alpha})`, radius * (1 - lifetime));
+    drawCircle(ctx, x * dpr, y * dpr, `rgba(${r}, ${g}, ${b}, ${alpha})`, radius * (1 - lifetime) * dpr);
   }
 }

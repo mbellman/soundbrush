@@ -4,13 +4,14 @@ export function createCanvas() {
 
   canvas.classList.add('canvas');
 
-  ctx.fillStyle = '#000';
-
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   function fitCanvasToWindow() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;    
+    const dpr = window.devicePixelRatio;
+
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
     ctx.fillStyle = '#000';
 
