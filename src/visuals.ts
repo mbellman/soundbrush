@@ -301,16 +301,14 @@ interface Sparkle {
 const sparkles: Sparkle[] = [];
 
 export function spawnSparkles(state: State): void {
-  if (Math.random() < 0.9) {
-    sparkles.push({
-      spawnTime: Date.now(),
-      position: {
-        x: state.mouse.x,
-        y: state.mouse.y,
-      },
-      radius: Math.random() * 2
-    });
-  }
+  sparkles.push({
+    spawnTime: Date.now(),
+    position: {
+      x: state.mouse.x + Math.sin(Date.now()) * 3,
+      y: state.mouse.y + Math.cos(Date.now()) * 3,
+    },
+    radius: Math.random() * 1.5
+  });
 }
 
 export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void {
@@ -320,7 +318,7 @@ export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void 
 
   // Remove dead particles
   while (i < sparkles.length) {
-    if (timeSince(sparkles[i].spawnTime) >= 1000) {
+    if (timeSince(sparkles[i].spawnTime) >= 2000) {
       sparkles.splice(i, 1);
     } else {
       i++;
@@ -329,10 +327,10 @@ export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void 
 
   // Draw particles
   for (const { spawnTime, position, radius } of sparkles) {
-    const lifetime = timeSince(spawnTime) / 1000;
+    const lifetime = timeSince(spawnTime) / 2000;
     const alpha = 1 - lifetime * lifetime;
-    const x = position.x + Math.sin(spawnTime + Date.now() / 500) * 20 * (1 - lifetime);
-    const y = position.y + Math.cos(spawnTime + Date.now() / 900) * 20 * (1 - lifetime);
+    const x = position.x + Math.sin(spawnTime + Date.now() / 500) * 50 * lifetime;
+    const y = position.y + Math.sin(spawnTime + Date.now() / 900) * 50 * lifetime;
     const { r, g, b } = noteToColor(spawnTime / 100);
 
     drawCircle(ctx, x * dpr, y * dpr, `rgba(${r}, ${g}, ${b}, ${alpha})`, radius * (1 - lifetime) * dpr);
