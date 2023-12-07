@@ -1,3 +1,4 @@
+import { squareWave } from './samples';
 import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
 import { timeSince } from './utilities';
 
@@ -44,11 +45,28 @@ function initializeContextAndGlobalNodes() {
 /**
  * @internal
  */
-function createWaveForm(instrument: Instrument): PeriodicWave {
-  const real = synths[instrument];
-  const imaginary = real.map(() => 0);
+function createWave(instrument: Instrument): AudioBuffer {
+  // const rate = context.sampleRate;
+  // const buffer = context.createBuffer(1, rate, 44100);
+  // const data = buffer.getChannelData(0);
+  // const period = rate / 440;
 
-  return context.createPeriodicWave(real, imaginary);
+  // for (let i = 0; i < rate; i++) {
+  //   data[i] = Math.sin((i / period) * Math.PI * 2);
+  // }
+
+  // return buffer;
+
+  const rate = context.sampleRate;
+  const buffer = context.createBuffer(1, rate, 44100);
+  const data = buffer.getChannelData(0);
+  const period = rate / 440;
+
+  for (let i = 0; i < rate; i++) {
+    data[i] = squareWave[i % squareWave.length];
+  }
+
+  return buffer;
 }
 
 /**
@@ -86,23 +104,13 @@ export function createSound(instrument: Instrument, note: number, startOffset = 
   const node = context.createBufferSource();
   const startTime = context.currentTime + startOffset + 0.01;
 
-  currentSoundBaseFrequency = node.playbackRate.value;// node.frequency.value;
-
-  // @temporary
-  const rate = context.sampleRate;
-  const buffer = context.createBuffer(1, rate, 44100);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < rate; i++) {
-    data[i] = Math.sin((i / 20) * Math.PI * 2);
-  }
-
   node.loop = true;
   node.detune.value = 100 * (note - MIDDLE_NOTE);
   node.playbackRate.value = 1;
 
-  // node.setPeriodicWave(createWaveForm(instrument));
-  node.buffer = buffer;
+  currentSoundBaseFrequency = node.detune.value;
+
+  node.buffer = createWave('electricPiano');
   node.start(startTime);
   node.connect(_gain);
 
