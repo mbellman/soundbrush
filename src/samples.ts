@@ -1,12 +1,18 @@
-type Wave = number[];
 type FourierFn = (x: number, iterations: number) => number;
+
+export type WaveForm = number[];
 
 /**
  * @internal
  */
-const createFourierSeries = (fn: FourierFn, size: number, iterations: number): Wave => {
+const createSampleWaveForm = (fn: FourierFn, size: number, iterations: number): WaveForm => {
   return new Array(size).fill(0).map((_, index) => fn((index / size) * Math.PI * 2, iterations));
 };
+
+/**
+ * @internal
+ */
+const sine: FourierFn = x => Math.sin(x);
 
 /**
  * @internal
@@ -23,4 +29,5 @@ const square: FourierFn = (x, iterations) => {
   return value;
 };
 
-export const squareWave = createFourierSeries(square, 100, 50);
+export const sineWave = createSampleWaveForm(sine, 100, 50);
+export const squareWave = createSampleWaveForm(square, 100, 50);

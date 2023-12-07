@@ -1,4 +1,4 @@
-import { squareWave } from './samples';
+import { WaveForm, sineWave, squareWave } from './samples';
 import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
 import { timeSince } from './utilities';
 
@@ -45,25 +45,13 @@ function initializeContextAndGlobalNodes() {
 /**
  * @internal
  */
-function createWave(instrument: Instrument): AudioBuffer {
-  // const rate = context.sampleRate;
-  // const buffer = context.createBuffer(1, rate, 44100);
-  // const data = buffer.getChannelData(0);
-  // const period = rate / 440;
-
-  // for (let i = 0; i < rate; i++) {
-  //   data[i] = Math.sin((i / period) * Math.PI * 2);
-  // }
-
-  // return buffer;
-
+function createWaveBuffer(wave: WaveForm): AudioBuffer {
   const rate = context.sampleRate;
   const buffer = context.createBuffer(1, rate, 44100);
   const data = buffer.getChannelData(0);
-  const period = rate / 440;
 
   for (let i = 0; i < rate; i++) {
-    data[i] = squareWave[i % squareWave.length];
+    data[i] = wave[i % wave.length];
   }
 
   return buffer;
@@ -110,7 +98,7 @@ export function createSound(instrument: Instrument, note: number, startOffset = 
 
   currentSoundBaseFrequency = node.detune.value;
 
-  node.buffer = createWave('electricPiano');
+  node.buffer = createWaveBuffer(sineWave);
   node.start(startTime);
   node.connect(_gain);
 
