@@ -5,7 +5,7 @@ let context: AudioContext = null;
 let compressor: DynamicsCompressorNode = null;
 
 export interface Sound {
-  node: OscillatorNode
+  node: AudioBufferSourceNode
   _gain: GainNode
   _startTime: number
   _endTime: number
@@ -76,19 +76,33 @@ export function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
-export function createSound(instrument: Instrument, note: number, startOffset = 0, frequency = 0): Sound {
+// @todo restore instrument selection
+export function createSound(instrument: Instrument, note: number, startOffset = 0): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
   }
 
   const _gain = context.createGain();
-  const node = context.createOscillator();
+  const node = context.createBufferSource();
   const startTime = context.currentTime + startOffset + 0.01;
 
-  node.frequency.value = frequency || getFrequency(note);
-  currentSoundBaseFrequency = node.frequency.value;
+  currentSoundBaseFrequency = node.playbackRate.value;// node.frequency.value;
 
-  node.setPeriodicWave(createWaveForm(instrument));
+  // @temporary
+  const rate = context.sampleRate;
+  const buffer = context.createBuffer(1, rate, 44100);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < rate; i++) {
+    data[i] = Math.sin((i / 20) * Math.PI * 2);
+  }
+
+  node.loop = true;
+  node.detune.value = 100 * (note - MIDDLE_NOTE);
+  node.playbackRate.value = 1;
+
+  // node.setPeriodicWave(createWaveForm(instrument));
+  node.buffer = buffer;
   node.start(startTime);
   node.connect(_gain);
 
@@ -122,7 +136,7 @@ export function modulateCurrentSound(modulation: number) {
   const unitModulation = Math.sin(context.currentTime * 50);
   const modulationFactor = modulation * Math.min(1, timeSince(currentSound._startTime) / 1000);
 
-  currentSound.node.frequency.value = currentSoundBaseFrequency + unitModulation * modulationFactor;
+  // currentSound.node.frequency.value = currentSoundBaseFrequency + unitModulation * modulationFactor;
 }
 
 export function stopModulatingCurrentSound() {
@@ -130,7 +144,7 @@ export function stopModulatingCurrentSound() {
     return;
   }
 
-  currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
+  // currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
 }
 
 export function setCurrentSoundNote(note: number) {
@@ -138,8 +152,9 @@ export function setCurrentSoundNote(note: number) {
     return;
   }
 
-  currentSound.node.frequency.value = getFrequency(note);
-  currentSoundBaseFrequency = currentSound.node.frequency.value;
+  // currentSound.node.frequency.value = getFrequency(note);
+  currentSound.node.detune.value = 100 * (note - MIDDLE_NOTE);
+  // currentSoundBaseFrequency = currentSound.node.frequency.value;
 }
 
 export function stopCurrentSound() {

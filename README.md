@@ -8,7 +8,7 @@ Draw things and make music.
 * window scroll brush stroke/particle repositioning
 * note continuity closure
 
-* resize from the back
+* note resizing from the left edge
 * multi-note selections
 * * undo support
 

@@ -103,8 +103,7 @@ export default class Sequence {
 
       for (const sequenceNote of chunkNotes) {
         const { note, offset, duration } = sequenceNote;
-        const frequency = audio.getFrequency(note);
-        const sound = audio.createSound(channel.instrument, 0, offset, frequency);
+        const sound = audio.createSound(channel.instrument, note, offset);
         const stopTime = currentTime + offset + duration;
 
         sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
