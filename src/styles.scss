@@ -128,3 +128,33 @@ body {
     cursor: pointer;
   }
 }
+
+.slider {
+  margin: 15px 0 20px;
+  position: relative;
+  width: 100%;
+
+  &--bar {
+    height: 2px;
+    background-color: #088;
+    width: 100%;
+  }
+
+  &--knob {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #0aa;
+    transform: translateY(-10px);
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.3s;
+
+    &:hover, &:active {
+      background-color: #0ff;
+    }
+
+    &:active {
+      box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+  }
+}

@@ -10,6 +10,15 @@ import { samples } from './samples';
  */
 function createSlider() {
   const slider = document.createElement('div');
+  const bar = document.createElement('div');
+  const knob = document.createElement('div');
+
+  slider.classList.add('slider');
+  bar.classList.add('slider--bar');
+  knob.classList.add('slider--knob');
+
+  slider.appendChild(bar);
+  slider.appendChild(knob);
 
   return slider;
 }
@@ -86,6 +95,10 @@ export function createSynthCreator(): HTMLDivElement {
   root.classList.add('synth-creator');
 
   root.appendChild(canvas);
+
+  // @temporary
+  root.appendChild(createSlider());
+  root.appendChild(createSlider());
 
   clearCanvas(canvas, canvas.getContext('2d'));
 
