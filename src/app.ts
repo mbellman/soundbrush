@@ -91,6 +91,7 @@ function updateNoteElementProgress(element: HTMLDivElement, progress: number): v
 function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   const element = document.createElement('div');
   const progressBar = document.createElement('div');
+  const mover = document.createElement('div');
   const resizer = document.createElement('div');
 
   const noteBarHeight = window.innerHeight / settings.divisions;
@@ -104,9 +105,11 @@ function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
   element.style.height = `${elementHeight}px`;
 
   progressBar.classList.add('note--progress');
+  mover.classList.add('note--mover');
   resizer.classList.add('note--resizer');
 
   element.appendChild(progressBar);
+  element.appendChild(mover);
   element.appendChild(resizer);
 
   noteContainer.appendChild(element);
