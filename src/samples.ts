@@ -29,5 +29,7 @@ const square: FourierFn = (x, iterations) => {
   return value;
 };
 
-export const sineWave = createSampleWaveForm(sine, 100, 50);
-export const squareWave = createSampleWaveForm(square, 100, 50);
+export const samples = {
+  sine: createSampleWaveForm(sine, 100, 50),
+  square: createSampleWaveForm(square, 100, 50)
+};

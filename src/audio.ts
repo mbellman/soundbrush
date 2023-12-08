@@ -1,4 +1,4 @@
-import { WaveForm, sineWave, squareWave } from './samples';
+import { WaveForm, samples } from './samples';
 import { FADE_OUT_TIME, MIDDLE_NOTE, TUNING_CONSTANT } from './constants';
 import { timeSince } from './utilities';
 
@@ -45,13 +45,13 @@ function initializeContextAndGlobalNodes() {
 /**
  * @internal
  */
-function createWaveBuffer(wave: WaveForm): AudioBuffer {
+function createWaveBuffer(waveForm: WaveForm): AudioBuffer {
   const rate = context.sampleRate;
   const buffer = context.createBuffer(1, rate, 44100);
   const data = buffer.getChannelData(0);
 
   for (let i = 0; i < rate; i++) {
-    data[i] = wave[i % wave.length];
+    data[i] = waveForm[i % waveForm.length];
   }
 
   return buffer;
@@ -82,8 +82,7 @@ export function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
-// @todo restore instrument selection
-export function createSound(instrument: Instrument, note: number, startOffset = 0): Sound {
+export function createSound(waveForm: WaveForm, note: number, startOffset = 0): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
   }
@@ -98,7 +97,7 @@ export function createSound(instrument: Instrument, note: number, startOffset = 
 
   currentSoundBaseFrequency = node.detune.value;
 
-  node.buffer = createWaveBuffer(sineWave);
+  node.buffer = createWaveBuffer(waveForm);
   node.start(startTime);
   node.connect(_gain);
 
@@ -116,8 +115,8 @@ export function createSound(instrument: Instrument, note: number, startOffset = 
   };
 }
 
-export function startNewSound(instrument: Instrument, note: number) {
-  const sound = createSound(instrument, note);
+export function startNewSound(waveForm: WaveForm, note: number) {
+  const sound = createSound(waveForm, note);
 
   currentSound = sound;
 

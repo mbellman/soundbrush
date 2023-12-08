@@ -8,6 +8,7 @@ import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 import { createSynthCreator } from './synth';
+import { samples } from './samples';
 
 let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLDivElement[] = [];
@@ -200,7 +201,7 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(state.selectedInstrument, 0);
+  audio.startNewSound(samples.sine, 0);
 
   // visuals.createNewBrushStroke();
 
@@ -279,7 +280,7 @@ function onNoteMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(state.selectedInstrument, 0);
+  audio.startNewSound(samples.sine, 0);
 
   state.selectedNoteElement = element;
   state.selectedNoteStartX = element.offsetLeft;

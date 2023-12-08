@@ -3,6 +3,7 @@ import type { Sound } from './audio';
 import * as audio from './audio';
 import { MIDDLE_NOTE } from './constants';
 import { Vec2 } from './types';
+import { samples } from './samples';
 
 export function createSynthCreator(): HTMLDivElement {
   const root = document.createElement('div');
@@ -16,7 +17,7 @@ export function createSynthCreator(): HTMLDivElement {
       stopSample();
     }
     
-    sample = audio.createSound('electricPiano', MIDDLE_NOTE);
+    sample = audio.createSound(samples.sine, MIDDLE_NOTE);
   }
 
   function stopSample() {

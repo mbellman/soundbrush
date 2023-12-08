@@ -1,5 +1,6 @@
 import type { Instrument } from './audio';
 import * as audio from './audio';
+import { samples } from './samples';
 
 type WebAudioNode = OscillatorNode | AudioBufferSourceNode
 type SequenceEventHandler = (note?: SequenceNote) => void
@@ -103,7 +104,7 @@ export default class Sequence {
 
       for (const sequenceNote of chunkNotes) {
         const { note, offset, duration } = sequenceNote;
-        const sound = audio.createSound(channel.instrument, note, offset);
+        const sound = audio.createSound(samples.sine, note, offset);
         const stopTime = currentTime + offset + duration;
 
         sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
