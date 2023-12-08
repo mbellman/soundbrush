@@ -315,8 +315,8 @@ export function spawnSparkles(state: State): void {
   sparkles.push({
     spawnTime: Date.now(),
     position: {
-      x: state.mouse.x + Math.sin(Date.now()) * 3,
-      y: state.mouse.y + Math.cos(Date.now()) * 3,
+      x: state.mouse.x + Math.sin(Date.now()) * 3 - state.scroll.x,
+      y: state.mouse.y + Math.cos(Date.now()) * 3 - state.scroll.y,
     },
     radius: Math.random() * 1.5
   });
@@ -324,6 +324,7 @@ export function spawnSparkles(state: State): void {
 
 export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void {
   const dpr = window.devicePixelRatio;
+  const { scroll } = state;
 
   let i = 0;
 
@@ -340,8 +341,8 @@ export function drawSparkles(ctx: CanvasRenderingContext2D, state: State): void 
   for (const { spawnTime, position, radius } of sparkles) {
     const lifetime = timeSince(spawnTime) / 2000;
     const alpha = 1 - lifetime * lifetime;
-    const x = position.x + Math.sin(spawnTime + Date.now() / 500) * 50 * lifetime;
-    const y = position.y + Math.sin(spawnTime + Date.now() / 900) * 50 * lifetime;
+    const x = position.x + Math.sin(spawnTime + Date.now() / 500) * 50 * lifetime + scroll.x;
+    const y = position.y + Math.sin(spawnTime + Date.now() / 900) * 50 * lifetime + scroll.y;
     const { r, g, b } = noteToColor(spawnTime / 100);
 
     drawCircle(ctx, x * dpr, y * dpr, `rgba(${r}, ${g}, ${b}, ${alpha})`, radius * (1 - lifetime) * dpr);
