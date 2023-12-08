@@ -1,4 +1,4 @@
-import type { Instrument } from './audio';
+import type { Instrument } from './samples';
 import * as audio from './audio';
 import { samples } from './samples';
 
@@ -103,8 +103,8 @@ export default class Sequence {
       const chunkNotes = channel.notes;
 
       for (const sequenceNote of chunkNotes) {
-        const { note, offset, duration } = sequenceNote;
-        const sound = audio.createSound(samples.sine, note, offset);
+        const { instrument, note, offset, duration } = sequenceNote;
+        const sound = audio.createSound(samples[instrument], note, offset);
         const stopTime = currentTime + offset + duration;
 
         sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);

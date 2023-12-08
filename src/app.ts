@@ -1,7 +1,7 @@
 import Sequence, { SequenceNote } from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
-import type { Instrument } from './audio';
+import type { Instrument } from './samples';
 import type { BrushStroke } from './visuals';
 import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
@@ -28,7 +28,7 @@ const settings: Settings = {
 };
 
 const state: State = {
-  selectedInstrument: 'bass',
+  selectedInstrument: 'square',
   scroll: { x: 0, y: 0 },
   targetScroll: { x: 0, y: 0 },
   running: true,
@@ -201,7 +201,7 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(samples.sine, 0);
+  audio.startNewSound(samples[state.selectedInstrument], 0);
 
   // visuals.createNewBrushStroke();
 
@@ -280,7 +280,7 @@ function onNoteMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(samples.sine, 0);
+  audio.startNewSound(samples[state.selectedInstrument], 0);
 
   state.selectedNoteElement = element;
   state.selectedNoteStartX = element.offsetLeft;

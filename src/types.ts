@@ -1,5 +1,5 @@
 import Sequence, { SequenceNote } from './Sequence';
-import { Instrument } from './audio';
+import type { Instrument } from './samples';
 
 export interface Vec2 {
   x: number
