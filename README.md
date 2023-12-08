@@ -14,7 +14,7 @@ Draw things and make music.
 
 * custom instruments
 * scrolling to the right
-* multiple channels
+* channel switching
 * measures
 * serialization
 

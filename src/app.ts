@@ -492,13 +492,13 @@ function createPlayBar(): HTMLDivElement {
 /**
  * @internal
  */
-function predictNextNote(note: number, beatsAheadLimit: number): SequenceNote {
-  const offsetTime = state.sequence.getPlayOffsetTime();
-  const offsetLimit = offsetTime + (beatsAheadLimit * DEFAULT_BEAT_LENGTH) / 400;
+function predictNextNote(note: number, startTime: number, beatsAheadLimit: number): SequenceNote {
   const pendingNotes = state.sequence.getPendingNotes();
-  let minimumDistance = Number.POSITIVE_INFINITY;
+  const offsetLimit = startTime + ((beatsAheadLimit + 1) * DEFAULT_BEAT_LENGTH) / 400;
+  let minimumDistance = 12;
+  let minimumOffset = Number.POSITIVE_INFINITY;
   let nextNote: SequenceNote = null;
-  
+
   // @todo improve
   for (const sequenceNote of pendingNotes) {
     if (sequenceNote.offset > offsetLimit) {
@@ -506,10 +506,16 @@ function predictNextNote(note: number, beatsAheadLimit: number): SequenceNote {
     }
 
     const distance = Math.abs(sequenceNote.note - note);
+    const offset = sequenceNote.offset - startTime;
 
     if (distance < minimumDistance) {
       nextNote = sequenceNote;
       minimumDistance = distance;
+    }
+
+    if (offset < minimumOffset) {
+      nextNote = sequenceNote;
+      minimumOffset = offset;
     }
   }
 
@@ -541,7 +547,8 @@ function updateActiveNoteElements(): void {
     visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, y, color);
 
     // @todo improve
-    const nextNote = predictNextNote(note, element.clientWidth / DEFAULT_BEAT_LENGTH);
+    const noteBeatLength = element.clientWidth / DEFAULT_BEAT_LENGTH;
+    const nextNote = predictNextNote(note, start, noteBeatLength);
 
     if (nextNote) {
       const nextY = getYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;

@@ -107,8 +107,9 @@ export default class Sequence {
         const sound = audio.createSound(samples[instrument], note, offset);
         const stopTime = currentTime + offset + duration;
 
-        sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.1);
-        sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+        // @todo allow attack/release to be customized
+        // sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.02);
+        // sound._gain.gain.linearRampToValueAtTime(0, stopTime);
 
         sound.node.stop(stopTime);
 
