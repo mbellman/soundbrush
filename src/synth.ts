@@ -5,6 +5,15 @@ import { MIDDLE_NOTE } from './constants';
 import { Vec2 } from './types';
 import { samples } from './samples';
 
+/**
+ * @internal
+ */
+function createSlider() {
+  const slider = document.createElement('div');
+
+  return slider;
+}
+
 export function createSynthCreator(): HTMLDivElement {
   const root = document.createElement('div');
   const canvas = document.createElement('canvas');

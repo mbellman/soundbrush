@@ -288,7 +288,7 @@ function onNoteMouseDown(e: MouseEvent) {
   state.selectedNoteElement = element;
   state.selectedNoteStartX = element.offsetLeft;
 
-  if (state.mouse.x > bounds.right - 10) {
+  if (state.mouse.x > bounds.right - 15) {
     state.selectedNoteAction = 'resize';
 
     setCursor('e-resize');
