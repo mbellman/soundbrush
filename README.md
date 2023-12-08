@@ -6,7 +6,7 @@ Draw things and make music.
 * don't place notes when focusing back in the window
 * window resize corrections
 * scroll shift bug
-* window scroll brush stroke/particle repositioning
+* particle repositioning on scroll
 * note continuity closure
 
 * note resizing from the left edge

@@ -38,8 +38,6 @@ const state: State = {
   dragStart: { x: 0, y: 0 },
   heldKeys: {},
   sequence: new Sequence(),
-  lastNoteY: -1,
-  lastNoteTime: -1,
   selectedNoteElement: null,
   selectedNoteStartX: 0,
   selectedNoteAction: 'move',
@@ -154,7 +152,16 @@ function getNoteAtYCoordinate(y: number, quantized = true): number {
 /**
  * @internal
  */
-function getYCoordinateForNote(note: number): number {
+function getAbsoluteYCoordinateForNote(note: number): number {
+  const barHeight = window.innerHeight / settings.divisions;
+
+  return (MIDDLE_NOTE - note) * barHeight;
+}
+
+/**
+ * @internal
+ */
+function getWindowYCoordinateForNote(note: number): number {
   const barHeight = window.innerHeight / settings.divisions;
   const remainder = mod(state.scroll.y, barHeight);
   const topNote = MIDDLE_NOTE + Math.floor(state.scroll.y / barHeight);
@@ -547,17 +554,19 @@ function updateActiveNoteElements(): void {
     const note = getNoteAtYCoordinate(y);
     const color = visuals.noteToColor(note);
 
-    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, y, color);
+    const dy = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5;
+
+    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, dy, color);
 
     // @todo improve
     const noteBeatLength = element.clientWidth / DEFAULT_BEAT_LENGTH;
     const nextNote = predictNextNote(note, start, noteBeatLength);
 
     if (nextNote) {
-      const nextY = getYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
+      const nextY = getAbsoluteYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
       const nextColor = visuals.noteToColor(nextNote.note);
       const nextNoteProgress = Math.pow((offsetTime - start) / (nextNote.offset - start), 2);
-      const previewY = lerp(y, nextY, nextNoteProgress);
+      const previewY = lerp(dy, nextY, nextNoteProgress);
       const blendedColor = visuals.lerpColor(color, nextColor, nextNoteProgress);
 
       visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], x, previewY, blendedColor);
@@ -590,9 +599,6 @@ export function init() {
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
     }
-
-    state.lastNoteTime = -1;
-    state.lastNoteY = -1;
   });
 
   // @todo consolidate with above
@@ -603,18 +609,12 @@ export function init() {
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
     }
-
-    state.lastNoteTime = -1;
-    state.lastNoteY = -1;
   });
 
   state.sequence.on('note-start', note => {
     const element = findNoteElement(note.instrument, note.id);
 
     activeNoteElements.push(element);
-
-    state.lastNoteY = getYCoordinateForNote(note.note);
-    state.lastNoteTime = state.sequence.getPlayOffsetTime();
 
     brushStrokeMap[note.id] = visuals.createNewBrushStroke();
     // @todo purge empty next-note brush strokes
@@ -680,7 +680,7 @@ export function init() {
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(ctx, state, settings);
     visuals.drawBeatLines(ctx, state, settings);
-    visuals.drawBrushStrokes(ctx);
+    visuals.drawBrushStrokes(ctx, state);
     visuals.drawSparkles(ctx, state);
 
     if (state.sequence.isPlaying()) {

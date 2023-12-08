@@ -252,8 +252,9 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
   ctx.fillRect(x * dpr, y * dpr, noteLength * dpr, noteElementHeight * dpr);
 }
 
-export function drawBrushStrokes(ctx: CanvasRenderingContext2D) {
+export function drawBrushStrokes(ctx: CanvasRenderingContext2D, state: State) {
   const dpr = window.devicePixelRatio;
+  const { scroll } = state;
 
   for (const { points, radius: baseRadius } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
@@ -269,7 +270,13 @@ export function drawBrushStrokes(ctx: CanvasRenderingContext2D) {
           y: p.y - pm1.y
         });
 
-        const gradient = ctx.createLinearGradient(dpr * (pm2.x - dx * radius), dpr * (pm2.y - dy * radius), dpr * (p.x + dx * radius), dpr * (p.y + dy * radius));
+        const gradient = ctx.createLinearGradient(
+          dpr * (pm2.x - dx * radius + scroll.x),
+          dpr * (pm2.y - dy * radius + scroll.y),
+          dpr * (p.x + dx * radius + scroll.x),
+          dpr * (p.y + dy * radius + scroll.y)
+        );
+
         const startColor = `rgb(${pm2.color.r}, ${pm2.color.g}, ${pm2.color.b})`;
         const endColor = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
@@ -280,15 +287,15 @@ export function drawBrushStrokes(ctx: CanvasRenderingContext2D) {
         ctx.lineWidth = radius * 2 * dpr;
 
         ctx.beginPath();
-        ctx.moveTo(pm2.x * dpr, pm2.y * dpr);
-        ctx.quadraticCurveTo(pm1.x * dpr, pm1.y * dpr, p.x * dpr, p.y * dpr);
+        ctx.moveTo(pm2.x * dpr + scroll.x * dpr, pm2.y * dpr + scroll.y * dpr);
+        ctx.quadraticCurveTo(pm1.x * dpr + scroll.x * dpr, pm1.y * dpr + scroll.y * dpr, p.x * dpr + scroll.x * dpr, p.y * dpr + scroll.y * dpr);
         ctx.stroke();
 
-        drawCircle(ctx, p.x * dpr, p.y * dpr, gradient, radius * dpr);
+        drawCircle(ctx, p.x * dpr + scroll.x * dpr, p.y * dpr + scroll.y * dpr, gradient, radius * dpr);
       } else {
         const colorValue = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
 
-        drawCircle(ctx, p.x * dpr, p.y * dpr, colorValue, radius * dpr);
+        drawCircle(ctx, p.x * dpr + scroll.x * dpr, p.y * dpr + scroll.y * dpr, colorValue, radius * dpr);
       }
     }
   }
