@@ -75,7 +75,7 @@ export function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
-export function createSound(waveForm: WaveForm, note: number, startOffset = 0): Sound {
+export function createSound(waveForm: WaveForm, note: number, startOffset = 0, attack = 0.01): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
   }
@@ -95,9 +95,9 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0): 
   node.connect(_gain);
 
   _gain.gain.value = 0;
-  _gain.gain.linearRampToValueAtTime(0, startTime);
-  _gain.gain.linearRampToValueAtTime(1, startTime + 0.01);
 
+  _gain.gain.linearRampToValueAtTime(0, startTime);
+  _gain.gain.linearRampToValueAtTime(1, startTime + attack);
   _gain.connect(compressor);
 
   return {

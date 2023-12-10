@@ -577,7 +577,7 @@ function updateActiveNoteElements(): void {
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
-  const synthCreator = createSynthCreator();
+  const synthCreator = createSynthCreator(state);
 
   noteContainer = createNoteContainer();
   playBar = createPlayBar();

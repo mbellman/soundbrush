@@ -17,10 +17,21 @@ export interface SequenceNote {
   id?: number
 }
 
+export interface ChannelConfig {
+  attack: number
+  release: number
+}
+
 export interface Channel {
   instrument: Instrument
+  config: ChannelConfig
   notes: SequenceNote[]
 }
+
+const DEFAULT_CHANNEL_CONFIG: ChannelConfig = {
+  attack: 0,
+  release: 0
+};
 
 export default class Sequence {
   private channels: Channel[] = [];
@@ -41,6 +52,7 @@ export default class Sequence {
   public createChannel(instrument: Instrument): Channel {
     const channel: Channel = {
       instrument,
+      config: DEFAULT_CHANNEL_CONFIG,
       notes: []
     };
 
@@ -101,15 +113,19 @@ export default class Sequence {
     for (const channel of this.channels) {
       // @todo queue N notes at a time
       const chunkNotes = channel.notes;
+      const config = channel.config;
 
       for (const sequenceNote of chunkNotes) {
         const { instrument, note, offset, duration } = sequenceNote;
-        const sound = audio.createSound(samples[instrument], note, offset);
+        const adjustedAttack = Math.min(config.attack, duration);
+        const adjustedRelease = Math.min(config.release, duration - adjustedAttack);
+        const sound = audio.createSound(samples[instrument], note, offset, adjustedAttack);
         const stopTime = currentTime + offset + duration;
 
-        // @todo allow attack/release to be customized
-        // sound._gain.gain.linearRampToValueAtTime(1, stopTime - 0.02);
-        // sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+        if (config.release > 0) {
+          sound._gain.gain.linearRampToValueAtTime(1, stopTime - adjustedRelease);
+          sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+        }
 
         sound.node.stop(stopTime);
 
@@ -178,6 +194,17 @@ export default class Sequence {
       const note = this.pendingNotes.shift();
 
       this.callEventHandlers('note-start', note);
+    }
+  }
+
+  public updateChannelConfiguration(instrument: Instrument, config: Partial<ChannelConfig>): void {
+    const channel = this.findChannel(instrument);
+
+    if (channel) {
+      channel.config = {
+        ...channel.config,
+        ...config
+      };
     }
   }
 
