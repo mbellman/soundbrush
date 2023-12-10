@@ -689,7 +689,7 @@ export function init() {
     visuals.drawSparkles(ctx, state);
 
     if (state.sequence.isPlaying()) {
-      const playBarX = state.sequence.getPlayOffsetTime() * 400;
+      const playBarX = state.sequence.getPlayOffsetTime() * 400 - state.scroll.x;
 
       playBar.style.left = `${playBarX}px`;
 
