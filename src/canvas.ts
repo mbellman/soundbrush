@@ -1,8 +1,9 @@
+// @todo move to app.ts, rename createNoteCanvas()
 export function createCanvas() {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.classList.add('canvas');
+  canvas.classList.add('note-canvas');
 
   function fitCanvasToWindow() {
     const dpr = window.devicePixelRatio;

@@ -226,12 +226,13 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
   }
 
   const dpr = window.devicePixelRatio;
-
+  
   const { mouse, scroll } = state;
+  const isHoveringOverNoteCanvas = (state.hoverTarget as HTMLElement)?.classList.contains('note-canvas');
   const barHeight = window.innerHeight / settings.divisions;
   const scrollRemainder = mod(state.scroll.y, barHeight);
   const noteElementHeight = barHeight - 10;
-  const opacity = 0.2 + 0.1 * Math.sin(Date.now() / 200);
+  const opacity = (0.2 + 0.1 * Math.sin(Date.now() / 200)) * (isHoveringOverNoteCanvas ? 1 : 0.1);
 
   const targetX = settings.useSnapping
     ? Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x
@@ -249,7 +250,10 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
   lastNotePreviewY = y;
 
   ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-  ctx.fillRect(x * dpr, y * dpr, noteLength * dpr, noteElementHeight * dpr);
+
+  ctx.beginPath();
+  ctx.roundRect(x * dpr, y * dpr, noteLength * dpr, noteElementHeight * dpr, 4);
+  ctx.fill();
 }
 
 export function drawBrushStrokes(ctx: CanvasRenderingContext2D, state: State) {

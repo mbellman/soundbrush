@@ -26,6 +26,7 @@ export interface State {
   playing: boolean
   mouse: Vec2
   dragStart: Vec2
+  hoverTarget: EventTarget
   heldKeys: Record<string, boolean>
   sequence: Sequence
   selectedNoteElement: HTMLDivElement

@@ -12,6 +12,7 @@ interface SliderConfig {
 }
 
 /**
+ * @todo move to widgets.ts
  * @internal
  */
 function createSlider(config: SliderConfig) {
@@ -50,7 +51,7 @@ function createSlider(config: SliderConfig) {
       const knobX = clamp(e.clientX - barBounds.left - centerOffsetX - knobBounds.width / 2, min, max);
       const value = knobX / (barBounds.width - knobBounds.width);
 
-      knob.style.transform = `translateX(${knobX}px) translateY(-10px)`;
+      knob.style.transform = `translateX(${knobX}px) translateY(-11px)`;
 
       config.onChange(value);
     }
@@ -152,6 +153,15 @@ export function createSynthCreator(state: State): HTMLDivElement {
     onChange: release => {
       sequence.updateChannelConfiguration(state.selectedInstrument, {
         release
+      });
+    }
+  }));
+
+  root.appendChild(createSlider({
+    label: 'Reverb (TODO)',
+    onChange: reverb => {
+      sequence.updateChannelConfiguration(state.selectedInstrument, {
+        reverb
       });
     }
   }));

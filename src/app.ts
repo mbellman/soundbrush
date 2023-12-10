@@ -36,6 +36,7 @@ const state: State = {
   playing: false,
   mouse: { x: 0, y: 0 },
   dragStart: { x: 0, y: 0 },
+  hoverTarget: null,
   heldKeys: {},
   sequence: new Sequence(),
   selectedNoteElement: null,
@@ -185,7 +186,7 @@ function handleDrawAction({ x, y }: Vec2) {
  * @internal
  */
 function setCursor(cursor: string): void {
-  const canvas = document.querySelector('.canvas') as HTMLElement;
+  const canvas = document.querySelector('.note-canvas') as HTMLElement;
 
   canvas.style.cursor = cursor;
 }
@@ -377,6 +378,8 @@ function onMouseMove(e: MouseEvent) {
       (selectedNoteElement.firstChild as HTMLDivElement).style.backgroundColor = colorString;
     }
   }
+
+  state.hoverTarget = e.target;
 
   state.mouse.x = e.clientX;
   state.mouse.y = e.clientY;

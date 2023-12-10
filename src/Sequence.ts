@@ -20,6 +20,7 @@ export interface SequenceNote {
 export interface ChannelConfig {
   attack: number
   release: number
+  reverb: number
 }
 
 export interface Channel {
@@ -30,7 +31,8 @@ export interface Channel {
 
 const DEFAULT_CHANNEL_CONFIG: ChannelConfig = {
   attack: 0,
-  release: 0
+  release: 0,
+  reverb: 0
 };
 
 export default class Sequence {
