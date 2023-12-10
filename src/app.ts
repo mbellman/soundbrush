@@ -219,9 +219,11 @@ function onCanvasMouseDown(e: MouseEvent) {
   const note = getNoteAtYCoordinate(state.mouse.y, !settings.microtonal);
   const { scroll, mouse, sequence } = state;
 
-  const offset = settings.useSnapping
-    ? (Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x) / 400
-    : mouse.x / 400;
+  const offset = (
+    settings.useSnapping
+      ? (Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x) / 400
+      : mouse.x / 400
+  ) + state.scroll.x / 400;
 
   const duration = (settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH) / 400;
 
@@ -415,9 +417,11 @@ function onWheel(e: WheelEvent) {
 function onKeyDown(e: KeyboardEvent) {
   state.heldKeys[e.key] = true;
 
-  // if (e.key === ' ') {
-  //   state.running = false;
-  // }
+  if (e.key === 'ArrowRight') {
+    state.targetScroll.x += 500;
+  } else if (e.key === 'ArrowLeft') {
+    state.targetScroll.x = Math.max(0, state.targetScroll.x - 500);
+  }
 }
 
 /**
@@ -554,9 +558,10 @@ function updateActiveNoteElements(): void {
     const note = getNoteAtYCoordinate(y);
     const color = visuals.noteToColor(note);
 
-    const dy = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5;
+    const ax = x + state.scroll.x;
+    const ay = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5;
 
-    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], x, dy, color);
+    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], ax, ay, color);
 
     // @todo improve
     const noteBeatLength = element.clientWidth / DEFAULT_BEAT_LENGTH;
@@ -566,10 +571,10 @@ function updateActiveNoteElements(): void {
       const nextY = getAbsoluteYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
       const nextColor = visuals.noteToColor(nextNote.note);
       const nextNoteProgress = Math.pow((offsetTime - start) / (nextNote.offset - start), 2);
-      const previewY = lerp(dy, nextY, nextNoteProgress);
+      const previewY = lerp(ay, nextY, nextNoteProgress);
       const blendedColor = visuals.lerpColor(color, nextColor, nextNoteProgress);
 
-      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], x, previewY, blendedColor);
+      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], ax, previewY, blendedColor);
     }
   }
 }
@@ -674,7 +679,7 @@ export function init() {
       state.scroll.x = lerp(state.scroll.x, state.targetScroll.x, dt * 5);
       state.scroll.y = lerp(state.scroll.y, state.targetScroll.y, dt * 5);
 
-      noteContainer.style.transform = `translateY(${state.scroll.y}px)`;
+      noteContainer.style.transform = `translateX(${-state.scroll.x}px) translateY(${state.scroll.y}px)`;
     }
 
     visuals.clearScreen(canvas, ctx);
