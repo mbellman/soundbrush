@@ -417,10 +417,23 @@ function onWheel(e: WheelEvent) {
 function onKeyDown(e: KeyboardEvent) {
   state.heldKeys[e.key] = true;
 
-  if (e.key === 'ArrowRight') {
-    state.targetScroll.x += 500;
-  } else if (e.key === 'ArrowLeft') {
-    state.targetScroll.x = Math.max(0, state.targetScroll.x - 500);
+  switch (e.key) {
+    case 'ArrowRight':
+    case 'd':
+      state.targetScroll.x += 500;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+      state.targetScroll.x = Math.max(0, state.targetScroll.x - 500);
+      break;
+    case 'ArrowUp':
+    case 'w':
+      state.targetScroll.y += 500;
+      break;
+    case 'ArrowDown':
+    case 's':
+      state.targetScroll.y -= 500;
+      break;      
   }
 }
 
