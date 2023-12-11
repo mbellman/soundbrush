@@ -125,8 +125,15 @@ export default class Sequence {
         const stopTime = currentTime + offset + duration;
 
         if (config.release > 0) {
-          sound._gain.gain.linearRampToValueAtTime(1, stopTime - adjustedRelease);
+          // @temporary
+          const reverbAmount = 0.5;
+
+          // @todo cleanup
+          sound._gain.gain.linearRampToValueAtTime(1 - reverbAmount, stopTime - adjustedRelease);
           sound._gain.gain.linearRampToValueAtTime(0, stopTime);
+
+          sound._reverbGain.gain.linearRampToValueAtTime(reverbAmount, stopTime - adjustedRelease);
+          sound._reverbGain.gain.linearRampToValueAtTime(0, stopTime);
         }
 
         sound.node.stop(stopTime);

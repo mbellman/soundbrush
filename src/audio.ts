@@ -8,6 +8,7 @@ let compressor: DynamicsCompressorNode = null;
 export interface Sound {
   node: AudioBufferSourceNode
   _gain: GainNode
+  _reverbGain: GainNode
   _startTime: number
   _endTime: number
 }
@@ -36,14 +37,16 @@ function initializeContextAndGlobalNodes() {
 }
 
 /**
+ * @todo pre-define audio buffers per channel instrument
+ *
  * @internal
  */
-function createWaveBuffer(waveForm: WaveForm): AudioBuffer {
+function createWaveFormAudioBuffer(waveForm: WaveForm): AudioBuffer {
   const rate = context.sampleRate;
-  const buffer = context.createBuffer(1, rate, 44100);
+  const buffer = context.createBuffer(1, rate, rate);
   const data = buffer.getChannelData(0);
 
-  for (let i = 0; i < rate; i++) {
+  for (let i = 0; i < data.length; i++) {
     data[i] = waveForm[i % waveForm.length];
   }
 
@@ -75,9 +78,28 @@ export function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
+// @todo use one reverb node per Sequence channel
+let reverb: ConvolverNode;
+
 export function createSound(waveForm: WaveForm, note: number, startOffset = 0, attack = 0.01): Sound {
   if (!context) {
     initializeContextAndGlobalNodes();
+    // loadImpulse();
+
+    reverb = context.createConvolver();
+
+    const impulse = context.createBuffer(2, 1 * context.sampleRate, context.sampleRate);
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    for (let i = 0; i < left.length; i++) {
+      left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / left.length, 3);
+      right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / right.length, 3);
+    }
+
+    reverb.buffer = impulse;
+
+    reverb.connect(compressor);
   }
 
   const _gain = context.createGain();
@@ -88,21 +110,40 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0, a
   node.detune.value = 100 * (note - MIDDLE_NOTE);
   node.playbackRate.value = 1;
 
+  // @todo see if we can get rid of this whole thing
   currentSoundBaseFrequency = node.detune.value;
 
-  node.buffer = createWaveBuffer(waveForm);
+  // @todo cleanup below
+  node.buffer = createWaveFormAudioBuffer(waveForm);
+
   node.start(startTime);
-  node.connect(_gain);
+
+  // @temporary
+  const reverbAmount = 0.5;
 
   _gain.gain.value = 0;
 
   _gain.gain.linearRampToValueAtTime(0, startTime);
-  _gain.gain.linearRampToValueAtTime(1, startTime + attack);
+  _gain.gain.linearRampToValueAtTime(1 - reverbAmount, startTime + attack);
+
+  const _reverbGain = context.createGain();
+
+  _reverbGain.gain.value = reverbAmount;
+
+  _reverbGain.gain.linearRampToValueAtTime(0, startTime);
+  _reverbGain.gain.linearRampToValueAtTime(reverbAmount, startTime + attack);
+
+  _reverbGain.connect(reverb);
+
+  node.connect(_gain);
+  node.connect(_reverbGain);
   _gain.connect(compressor);
 
   return {
     node,
     _gain,
+    _reverbGain,
+    // @todo align with startTime
     _startTime: Date.now(),
     _endTime: -1
   };
