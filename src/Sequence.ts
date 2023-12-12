@@ -26,6 +26,9 @@ export interface ChannelConfig {
 export interface Channel {
   instrument: Instrument
   config: ChannelConfig
+  fx: {
+    reverb: ConvolverNode
+  }
   notes: SequenceNote[]
 }
 
@@ -52,9 +55,14 @@ export default class Sequence {
   }
 
   public createChannel(instrument: Instrument): Channel {
+    audio.ensureContext();
+
     const channel: Channel = {
       instrument,
       config: DEFAULT_CHANNEL_CONFIG,
+      fx: {
+        reverb: audio.createReverb()
+      },
       notes: []
     };
 
@@ -123,6 +131,8 @@ export default class Sequence {
         const adjustedRelease = Math.min(config.release, duration - adjustedAttack);
         const sound = audio.createSound(samples[instrument], note, offset, adjustedAttack);
         const stopTime = currentTime + offset + duration;
+
+        sound._reverbGain.connect(channel.fx.reverb);
 
         if (config.release > 0) {
           // @temporary

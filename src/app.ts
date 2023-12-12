@@ -194,6 +194,20 @@ function setCursor(cursor: string): void {
 /**
  * @internal
  */
+function startCurrentChannelSound(): void {
+  const sound = audio.startNewSound(samples[state.selectedInstrument], 0);
+  let currentChannel = state.sequence.findChannel(state.selectedInstrument);
+
+  if (!currentChannel) {
+    currentChannel = state.sequence.createChannel(state.selectedInstrument);
+  }
+
+  sound._reverbGain.connect(currentChannel.fx.reverb);
+}
+
+/**
+ * @internal
+ */
 function onCanvasMouseDown(e: MouseEvent) {
   // @todo factor
   {
@@ -212,7 +226,8 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(samples[state.selectedInstrument], 0);
+
+  startCurrentChannelSound();
 
   // visuals.createNewBrushStroke();
 
@@ -293,7 +308,8 @@ function onNoteMouseDown(e: MouseEvent) {
 
   audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
-  audio.startNewSound(samples[state.selectedInstrument], 0);
+
+  startCurrentChannelSound();
 
   state.selectedNoteElement = element;
   state.selectedNoteStartX = element.offsetLeft;

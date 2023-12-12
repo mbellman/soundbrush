@@ -78,29 +78,33 @@ export function getFrequency(note: number) {
   return Math.pow(TUNING_CONSTANT, note - MIDDLE_NOTE) * 440;
 }
 
-// @todo use one reverb node per Sequence channel
-let reverb: ConvolverNode;
-
-export function createSound(waveForm: WaveForm, note: number, startOffset = 0, attack = 0.01): Sound {
+export function ensureContext(): void {
   if (!context) {
     initializeContextAndGlobalNodes();
-    // loadImpulse();
-
-    reverb = context.createConvolver();
-
-    const impulse = context.createBuffer(2, 1 * context.sampleRate, context.sampleRate);
-    const left = impulse.getChannelData(0);
-    const right = impulse.getChannelData(1);
-
-    for (let i = 0; i < left.length; i++) {
-      left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / left.length, 3);
-      right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / right.length, 3);
-    }
-
-    reverb.buffer = impulse;
-
-    reverb.connect(compressor);
   }
+}
+
+export function createReverb(): ConvolverNode {
+  const reverb = context.createConvolver();
+  const impulse = context.createBuffer(2, 1 * context.sampleRate, context.sampleRate);
+  const left = impulse.getChannelData(0);
+  const right = impulse.getChannelData(1);
+
+  for (let i = 0; i < left.length; i++) {
+    left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / left.length, 3);
+    right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / right.length, 3);
+  }
+
+  reverb.buffer = impulse;
+
+  // @todo allow this to be done manually by the consumer
+  reverb.connect(compressor);
+
+  return reverb;
+}
+
+export function createSound(waveForm: WaveForm, note: number, startOffset = 0, attack = 0.01): Sound {
+  ensureContext();
 
   const _gain = context.createGain();
   const node = context.createBufferSource();
@@ -133,8 +137,6 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0, a
   _reverbGain.gain.linearRampToValueAtTime(0, startTime);
   _reverbGain.gain.linearRampToValueAtTime(reverbAmount, startTime + attack);
 
-  _reverbGain.connect(reverb);
-
   node.connect(_gain);
   node.connect(_reverbGain);
   _gain.connect(compressor);
@@ -149,12 +151,14 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0, a
   };
 }
 
-export function startNewSound(waveForm: WaveForm, note: number) {
+export function startNewSound(waveForm: WaveForm, note: number): Sound {
   const sound = createSound(waveForm, note);
 
   currentSound = sound;
 
   sounds.push(currentSound);
+
+  return sound;
 }
 
 export function modulateCurrentSound(modulation: number) {
@@ -205,7 +209,9 @@ export function endSound(sound: Sound) {
 }
 
 export function handleSounds() {
-  for (let i = 0; i < sounds.length; i++) {
+  let i = 0;
+
+  while (i < sounds.length) {
     const sound = sounds[i];
     const ended = sound._endTime > -1 && timeSince(sound._endTime) > FADE_OUT_TIME;
 
@@ -217,6 +223,8 @@ export function handleSounds() {
       }
 
       sounds.splice(i, 1);
+    } else {
+      i++;
     }
   }
 }
