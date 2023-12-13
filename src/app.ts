@@ -537,6 +537,7 @@ function createPlayBar(): HTMLDivElement {
 function predictNextNote(note: number, startTime: number, beatsAheadLimit: number): SequenceNote {
   const pendingNotes = state.sequence.getPendingNotes();
   const offsetLimit = startTime + ((beatsAheadLimit + 1) * DEFAULT_BEAT_LENGTH) / 400;
+  let minimumWeight = Number.POSITIVE_INFINITY;
   let minimumDistance = 12;
   let minimumOffset = Number.POSITIVE_INFINITY;
   let nextNote: SequenceNote = null;
@@ -548,16 +549,17 @@ function predictNextNote(note: number, startTime: number, beatsAheadLimit: numbe
     }
 
     const distance = Math.abs(sequenceNote.note - note);
-    const offset = sequenceNote.offset - startTime;
 
-    if (distance < minimumDistance) {
-      nextNote = sequenceNote;
-      minimumDistance = distance;
+    if (distance > 12) {
+      continue;
     }
 
-    if (offset < minimumOffset) {
+    const offset = sequenceNote.offset - startTime;
+    const weight = offset + distance * 2;
+
+    if (weight < minimumWeight) {
       nextNote = sequenceNote;
-      minimumOffset = offset;
+      minimumWeight = weight;
     }
   }
 
