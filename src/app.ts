@@ -9,6 +9,7 @@ import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 import { createSynthCreator } from './synth';
 import { samples } from './samples';
+import { createUi } from './ui';
 
 let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLDivElement[] = [];
@@ -610,6 +611,7 @@ export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
   const synthCreator = createSynthCreator(state);
+  const ui = createUi(state, settings);
 
   noteContainer = createNoteContainer();
   playBar = createPlayBar();
