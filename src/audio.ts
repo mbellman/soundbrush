@@ -103,11 +103,12 @@ export function createReverb(): ConvolverNode {
   return reverb;
 }
 
-export function createSound(waveForm: WaveForm, note: number, startOffset = 0, attack = 0.01): Sound {
+export function createSound(waveForm: WaveForm, note: number, startOffset = 0): Sound {
   ensureContext();
 
-  const _gain = context.createGain();
   const node = context.createBufferSource();
+  const _gain = context.createGain();
+  const _reverbGain = context.createGain();
   const startTime = context.currentTime + startOffset + 0.01;
 
   node.loop = true;
@@ -117,25 +118,12 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0, a
   // @todo see if we can get rid of this whole thing
   currentSoundBaseFrequency = node.detune.value;
 
-  // @todo cleanup below
   node.buffer = createWaveFormAudioBuffer(waveForm);
 
-  node.start(startTime);
-
-  // @temporary
-  const reverbAmount = 0.5;
-
   _gain.gain.value = 0;
+  _reverbGain.gain.value = 0;
 
-  _gain.gain.linearRampToValueAtTime(0, startTime);
-  _gain.gain.linearRampToValueAtTime(1 - reverbAmount, startTime + attack);
-
-  const _reverbGain = context.createGain();
-
-  _reverbGain.gain.value = reverbAmount;
-
-  _reverbGain.gain.linearRampToValueAtTime(0, startTime);
-  _reverbGain.gain.linearRampToValueAtTime(reverbAmount, startTime + attack);
+  node.start(startTime);
 
   node.connect(_gain);
   node.connect(_reverbGain);
@@ -145,8 +133,7 @@ export function createSound(waveForm: WaveForm, note: number, startOffset = 0, a
     node,
     _gain,
     _reverbGain,
-    // @todo align with startTime
-    _startTime: Date.now(),
+    _startTime: startTime,
     _endTime: -1
   };
 }
@@ -159,25 +146,6 @@ export function startNewSound(waveForm: WaveForm, note: number): Sound {
   sounds.push(currentSound);
 
   return sound;
-}
-
-export function modulateCurrentSound(modulation: number) {
-  if (!currentSound) {
-    return;
-  }
-
-  const unitModulation = Math.sin(context.currentTime * 50);
-  const modulationFactor = modulation * Math.min(1, timeSince(currentSound._startTime) / 1000);
-
-  // currentSound.node.frequency.value = currentSoundBaseFrequency + unitModulation * modulationFactor;
-}
-
-export function stopModulatingCurrentSound() {
-  if (!currentSound) {
-    return;
-  }
-
-  // currentSound.node.frequency.linearRampToValueAtTime(currentSoundBaseFrequency, context.currentTime + 0.5);
 }
 
 export function setCurrentSoundNote(note: number) {

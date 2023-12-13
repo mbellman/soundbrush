@@ -1,4 +1,5 @@
 import type { Instrument } from './samples';
+import type { Sound } from './audio';
 import * as audio from './audio';
 import { samples } from './samples';
 
@@ -52,6 +53,41 @@ export default class Sequence {
     channel.notes.push(note);
 
     this.sortChannelNotes(instrument);
+  }
+
+  // @todo make attack + release more dramatic
+  public applyChannelFx(sound: Sound, channel: Channel): void {
+    const { config, fx } = channel;
+    const { _gain, _reverbGain } = sound;
+    const duration = sound._endTime < 0 ? 1 : sound._endTime - sound._startTime;
+    const adjustedAttack = Math.min(5 * config.attack, duration);
+    const adjustedRelease = Math.min(config.release, duration - adjustedAttack);
+
+    // Reverb
+    _reverbGain.connect(fx.reverb);
+
+    // @todo find intersection value of combined attack/release
+    const maxVolume = 1;//Math.min(duration, adjustedAttack);
+
+    // Attack (main)
+    _gain.gain.setValueAtTime(0, sound._startTime);
+    _gain.gain.linearRampToValueAtTime(maxVolume * (1 - config.reverb), sound._startTime + adjustedAttack);
+
+    if (config.release > 0 && sound._endTime > 0) {
+      // Release (main)
+      _gain.gain.linearRampToValueAtTime(maxVolume * (1 - config.reverb), sound._endTime - adjustedRelease);
+      _gain.gain.linearRampToValueAtTime(0, sound._endTime);
+    }
+
+    // Attack (reverb)
+    _reverbGain.gain.setValueAtTime(0, sound._startTime);
+    _reverbGain.gain.linearRampToValueAtTime(maxVolume * config.reverb, sound._startTime + adjustedAttack);
+
+    if (config.reverb > 0 && config.release > 0 && sound._endTime > 0) {      
+      // Release (reverb)
+      sound._reverbGain.gain.setValueAtTime(maxVolume * config.reverb, sound._endTime - adjustedRelease);
+      sound._reverbGain.gain.linearRampToValueAtTime(0, sound._endTime);
+    }
   }
 
   public createChannel(instrument: Instrument): Channel {
@@ -123,30 +159,17 @@ export default class Sequence {
     for (const channel of this.channels) {
       // @todo queue N notes at a time
       const chunkNotes = channel.notes;
-      const config = channel.config;
 
       for (const sequenceNote of chunkNotes) {
         const { instrument, note, offset, duration } = sequenceNote;
-        const adjustedAttack = Math.min(config.attack, duration);
-        const adjustedRelease = Math.min(config.release, duration - adjustedAttack);
-        const sound = audio.createSound(samples[instrument], note, offset, adjustedAttack);
+        const sound = audio.createSound(samples[instrument], note, offset);
         const stopTime = currentTime + offset + duration;
 
-        sound._reverbGain.connect(channel.fx.reverb);
-
-        if (config.release > 0) {
-          // @temporary
-          const reverbAmount = 0.5;
-
-          // @todo cleanup
-          sound._gain.gain.linearRampToValueAtTime(1 - reverbAmount, stopTime - adjustedRelease);
-          sound._gain.gain.linearRampToValueAtTime(0, stopTime);
-
-          sound._reverbGain.gain.linearRampToValueAtTime(reverbAmount, stopTime - adjustedRelease);
-          sound._reverbGain.gain.linearRampToValueAtTime(0, stopTime);
-        }
+        sound._endTime = stopTime;
 
         sound.node.stop(stopTime);
+
+        this.applyChannelFx(sound, channel);
 
         sound.node.addEventListener('ended', () => {
           this.callEventHandlers('note-end', sequenceNote);
@@ -217,7 +240,7 @@ export default class Sequence {
   }
 
   public updateChannelConfiguration(instrument: Instrument, config: Partial<ChannelConfig>): void {
-    const channel = this.findChannel(instrument);
+    const channel = this.findChannel(instrument) || this.createChannel(instrument);
 
     if (channel) {
       channel.config = {

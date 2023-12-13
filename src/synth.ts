@@ -158,7 +158,7 @@ export function createSynthCreator(state: State): HTMLDivElement {
   }));
 
   root.appendChild(createSlider({
-    label: 'Reverb (TODO)',
+    label: 'Reverb',
     onChange: reverb => {
       sequence.updateChannelConfiguration(state.selectedInstrument, {
         reverb

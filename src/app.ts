@@ -202,7 +202,7 @@ function startCurrentChannelSound(): void {
     currentChannel = state.sequence.createChannel(state.selectedInstrument);
   }
 
-  sound._reverbGain.connect(currentChannel.fx.reverb);
+  state.sequence.applyChannelFx(sound, currentChannel);
 }
 
 /**
@@ -224,7 +224,6 @@ function onCanvasMouseDown(e: MouseEvent) {
     };
   }
 
-  audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
   startCurrentChannelSound();
@@ -306,7 +305,6 @@ function onNoteMouseDown(e: MouseEvent) {
 
   const bounds = element.getBoundingClientRect();
 
-  audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
   startCurrentChannelSound();
@@ -344,8 +342,6 @@ function onMouseMove(e: MouseEvent) {
 
     const mouseSpeed = Math.sqrt(lastDelta.x*lastDelta.x + lastDelta.y*lastDelta.y);
     const modulation = Math.min(5, mouseSpeed * 50);
-
-    audio.modulateCurrentSound(modulation);
 
     // @todo cleanup
     const { selectedNoteElement } = state;
@@ -409,7 +405,6 @@ function onMouseMove(e: MouseEvent) {
 function onMouseUp(e: MouseEvent) {
   state.mousedown = false;
 
-  audio.stopModulatingCurrentSound();
   audio.stopCurrentSound();
 
   const { selectedNoteElement } = state;
