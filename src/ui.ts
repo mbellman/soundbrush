@@ -17,36 +17,27 @@ const on = {
   }
 };
 
-/**
- * @internal
- */
-function createPanButtons() {
-  const container = document.createElement('div');
+export function createUi(state: State, settings: Settings): void {
+  const ui = document.createElement('div');
 
-  container.classList.add('pan-buttons');
-
-  container.innerHTML = `
-    <button class="pan-button left">«</button>
-    <button class="pan-button right">»</button>
+  ui.innerHTML = `
+    <div class="pan-buttons">
+      <button class="pan-button left">«</button>
+      <button class="pan-button right">»</button>
+    </div>
   `;
 
-  return container;
-}
-
-export function createUi(state: State, settings: Settings): void {
-  const panButtons = createPanButtons();
-
-  on.click(panButtons, '.pan-button.left', () => {
+  on.click(ui, '.pan-button.left', () => {
     state.targetScroll.x = Math.max(0, state.targetScroll.x - 500);
 
     (document.activeElement as HTMLButtonElement).blur();
   });
 
-  on.click(panButtons, '.pan-button.right', () => {
+  on.click(ui, '.pan-button.right', () => {
     state.targetScroll.x += 500;
 
     (document.activeElement as HTMLButtonElement).blur();
   });
 
-  document.body.appendChild(panButtons);
+  document.body.appendChild(ui);
 }
