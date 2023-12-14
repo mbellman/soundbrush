@@ -12,8 +12,7 @@ interface SliderConfig {
 }
 
 /**
- * @todo move to widgets.ts
- * @internal
+ * @todo move to widgets/slider.ts
  */
 function createSlider(config: SliderConfig) {
   const slider = document.createElement('div');
@@ -64,7 +63,10 @@ function createSlider(config: SliderConfig) {
   return slider;
 }
 
-export function createSynthCreator(state: State): HTMLDivElement {
+/**
+ * @todo move to widgets/channel-panel.ts
+ */
+function createChannelPanel(state: State): HTMLDivElement {
   const root = document.createElement('div');
   const canvas = document.createElement('canvas');
 
@@ -134,6 +136,7 @@ export function createSynthCreator(state: State): HTMLDivElement {
   });
 
   root.classList.add('synth-creator');
+  root.classList.add('expanded');
 
   root.appendChild(canvas);
 
@@ -169,4 +172,36 @@ export function createSynthCreator(state: State): HTMLDivElement {
   clearCanvas(canvas, canvas.getContext('2d'));
 
   return root;
+}
+
+function createAddChannelButton(state: State) {
+  const button = document.createElement('button');
+
+  button.classList.add('channel-list--add-channel-button');
+  button.innerHTML = '+';
+
+  return button;
+}
+
+// @todo rename createChannelList
+export function createSynthCreator(state: State): HTMLDivElement {
+  const channelList = document.createElement('div');
+
+  channelList.classList.add('channel-list');
+  channelList.appendChild(createChannelPanel(state));
+  channelList.appendChild(createAddChannelButton(state));
+
+  // @todo cleanup
+  channelList.querySelector('.channel-list--add-channel-button').addEventListener('click', () => {
+    channelList.querySelectorAll('.synth-creator').forEach(element => {
+      element.classList.remove('expanded');
+      element.classList.add('collapsed');
+    });
+
+    channelList.appendChild(createChannelPanel(state));
+  });
+
+  document.body.appendChild(channelList);
+
+  return channelList;
 }

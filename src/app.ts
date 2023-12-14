@@ -538,8 +538,6 @@ function predictNextNote(note: number, startTime: number, beatsAheadLimit: numbe
   const pendingNotes = state.sequence.getPendingNotes();
   const offsetLimit = startTime + ((beatsAheadLimit + 1) * DEFAULT_BEAT_LENGTH) / 400;
   let minimumWeight = Number.POSITIVE_INFINITY;
-  let minimumDistance = 12;
-  let minimumOffset = Number.POSITIVE_INFINITY;
   let nextNote: SequenceNote = null;
 
   // @todo improve
