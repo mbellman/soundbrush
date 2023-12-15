@@ -8,8 +8,8 @@ import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 import { createChannelManager } from './ui/channel-manager';
+import { createScrollButtons } from './ui/scroll-buttons';
 import { samples } from './samples';
-import { createUi } from './ui';
 
 let noteContainer: HTMLDivElement = null;
 const noteElements: HTMLDivElement[] = [];
@@ -611,7 +611,7 @@ export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
   const channelManager = createChannelManager(state);
-  const ui = createUi(state, settings);
+  const scrollButtons = createScrollButtons(state, settings);
 
   noteContainer = createNoteContainer();
   playBar = createPlayBar();
@@ -740,4 +740,5 @@ export function init() {
 
   document.body.appendChild(canvas);
   document.body.appendChild(channelManager);
+  document.body.appendChild(scrollButtons);
 }

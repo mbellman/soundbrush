@@ -1,6 +1,6 @@
-@use './mixins.scss' as *;
+@use '../mixins.scss' as *;
 
-.pan-buttons {
+.scroll-buttons {
   bottom: 10px;
   display: flex;
   justify-content: space-between;
@@ -10,7 +10,7 @@
   width: 200px;
   z-index: 10;
 
-  .pan-button {
+  &--button {
     @include glass;
     border: 0;
     border-radius: 10px;
