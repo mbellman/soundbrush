@@ -4,6 +4,7 @@ body {
   margin: 0;
   overflow: hidden;
   user-select: none;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 @keyframes pop-in {
@@ -113,8 +114,8 @@ body {
 .channel-list {
   left: 10px;
   position: absolute;
-  top: 20px;
-  padding-bottom: 40px;
+  top: 10px;
+  padding-bottom: 30px;
 
   &--add-channel-button {
     @include glass;
@@ -152,15 +153,52 @@ body {
   border-radius: 10px;
   overflow: hidden;
   padding: 10px;
-  transition: height 0.5s;
+  transition: height 0.5s, transform 0.2s;
   margin-bottom: 10px;
+
+  > canvas {
+    transition: opacity 0.2s;
+  }
+
+  &:hover {
+    &::after {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
 
   &.collapsed {
     height: 20px;
+
+    > canvas {
+      opacity: 0;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      cursor: pointer;
+      z-index: 5;
+      transition: all 0.2s;
+    }
   }
 
   &.expanded {
-    height: 300px;
+    height: 320px;
+  }
+
+  &--header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ddf;
+    margin-bottom: 8px;
   }
 
   canvas {

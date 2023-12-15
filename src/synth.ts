@@ -66,7 +66,12 @@ function createSlider(config: SliderConfig) {
 /**
  * @todo move to widgets/channel-panel.ts
  */
-function createChannelPanel(state: State): HTMLDivElement {
+interface ChannelPanelConfig {
+  name: string
+  onClickExpand: (element: HTMLDivElement) => void
+}
+
+function createChannelPanel(state: State, config: ChannelPanelConfig): HTMLDivElement {
   const root = document.createElement('div');
   const canvas = document.createElement('canvas');
 
@@ -135,10 +140,24 @@ function createChannelPanel(state: State): HTMLDivElement {
     e.stopPropagation();
   });
 
-  root.classList.add('synth-creator');
-  root.classList.add('expanded');
+  root.classList.add('synth-creator', 'expanded');
 
+  const header = document.createElement('div');
+
+  header.classList.add('synth-creator--header');
+
+  header.innerHTML = config.name;
+
+  root.appendChild;
+  root.appendChild(header);
   root.appendChild(canvas);
+
+  // @temporary
+  root.addEventListener('click', () => {
+    if (root.classList.contains('collapsed')) {
+      config.onClickExpand(root);
+    }
+  });
 
   const { sequence } = state;
 
@@ -187,18 +206,37 @@ function createAddChannelButton(state: State) {
 export function createSynthCreator(state: State): HTMLDivElement {
   const channelList = document.createElement('div');
 
-  channelList.classList.add('channel-list');
-  channelList.appendChild(createChannelPanel(state));
-  channelList.appendChild(createAddChannelButton(state));
-
-  // @todo cleanup
-  channelList.querySelector('.channel-list--add-channel-button').addEventListener('click', () => {
+  function collapseAllChannels() {
     channelList.querySelectorAll('.synth-creator').forEach(element => {
       element.classList.remove('expanded');
       element.classList.add('collapsed');
     });
+  }
 
-    channelList.appendChild(createChannelPanel(state));
+  function expandChannel(element: HTMLDivElement) {
+    collapseAllChannels();
+
+    element.classList.add('expanded');
+    element.classList.remove('collapsed');
+  }
+
+  channelList.classList.add('channel-list');
+
+  channelList.appendChild(createChannelPanel(state, {
+    name: 'Channel X',
+    onClickExpand: expandChannel
+  }));
+
+  channelList.appendChild(createAddChannelButton(state));
+
+  // @todo cleanup
+  channelList.querySelector('.channel-list--add-channel-button').addEventListener('click', () => {
+    collapseAllChannels();
+
+    channelList.appendChild(createChannelPanel(state, {
+      name: 'Channel X',
+      onClickExpand: expandChannel
+    }));
   });
 
   document.body.appendChild(channelList);
