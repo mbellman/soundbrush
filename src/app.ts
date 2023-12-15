@@ -610,8 +610,6 @@ function updateActiveNoteElements(): void {
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
-  const channelManager = createChannelManager(state);
-  const scrollButtons = createScrollButtons(state, settings);
 
   noteContainer = createNoteContainer();
   playBar = createPlayBar();
@@ -739,6 +737,13 @@ export function init() {
   loop();
 
   document.body.appendChild(canvas);
-  document.body.appendChild(channelManager);
-  document.body.appendChild(scrollButtons);
+
+  // UI
+  {
+    const channelManager = createChannelManager(state);
+    const scrollButtons = createScrollButtons(state, settings);
+  
+    document.body.appendChild(channelManager);
+    document.body.appendChild(scrollButtons);
+  }
 }

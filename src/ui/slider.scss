@@ -11,10 +11,20 @@
   }
 
   &--bar {
-    background-color: #779;
+    background-color: #88a;
     border-radius: 2px;
     height: 3px;
+    opacity: 0.2;
     width: 100%;
+
+    &-fill {
+      background-color: #88a;
+      border-radius: 2px;
+      height: 3px;
+      position: relative;
+      transform: translateY(-3px);
+      width: 0;
+    }
   }
 
   &--knob {
@@ -22,7 +32,7 @@
     border-radius: 50%;
     cursor: grab;
     height: 19px;
-    transform: translateY(-11px);
+    transform: translateY(-14px);
     transition: background-color 0.3s, box-shadow 0.3s;
     width: 19px;
 

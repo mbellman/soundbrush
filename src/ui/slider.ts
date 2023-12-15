@@ -11,12 +11,13 @@ export function createSlider(config: SliderConfig) {
   let dragging = false;
   let centerOffsetX: number;
 
-  const { root, bar, knob } = createTemplate(`
+  const { root, bar, fill, knob } = createTemplate(`
     <div class="slider">
       <div class="slider--label">
         ${config.label}
       </div>
       <div @bar class="slider--bar"></div>
+      <div @fill class="slider--bar-fill"></div>
       <div @knob class="slider--knob"></div>
     </div>  
   `);
@@ -37,7 +38,8 @@ export function createSlider(config: SliderConfig) {
       const knobX = clamp(e.clientX - barBounds.left - centerOffsetX - knobBounds.width / 2, min, max);
       const value = knobX / (barBounds.width - knobBounds.width);
 
-      knob.style.transform = `translateX(${knobX}px) translateY(-11px)`;
+      fill.style.width = `${value * 100}%`;
+      knob.style.transform = `translateX(${knobX}px) translateY(-14px)`;
 
       config.onChange(value);
     }
