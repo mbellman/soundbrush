@@ -31,7 +31,7 @@
   }
 
   &.collapsed {
-    height: 20px;
+    height: 22px;
 
     > canvas {
       opacity: 0;
@@ -55,7 +55,7 @@
   }
 
   &.expanded {
-    height: 320px;
+    height: 324px;
   }
 
   &--header {
