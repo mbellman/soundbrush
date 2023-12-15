@@ -1,26 +1,26 @@
 @use './mixins.scss' as *;
 
 .pan-buttons {
-  position: absolute;
-  width: 200px;
+  bottom: 10px;
   display: flex;
   justify-content: space-between;
-  bottom: 10px;
   left: 50%;
+  position: absolute;
   transform: translateX(-50%);
+  width: 200px;
   z-index: 10;
 
   .pan-button {
     @include glass;
-    width: 70px;
-    height: 50px;
-    cursor: pointer;
-    color: #fff;
-    font-size: 30px;
     border: 0;
     border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 30px;
+    height: 50px;
     padding: 0 10px 5px;
     transition: all 0.2s;
+    width: 70px;
 
     &:hover {
       background-color: rgba(50, 100, 255, 0.5);

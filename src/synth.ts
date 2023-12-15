@@ -5,9 +5,9 @@ import { createTemplate } from './ui/create-widget';
 // @todo rename createChannelManager
 export function createSynthCreator(state: State) {
   const { root, list, addButton } = createTemplate(`
-    <div class="channel-list">
+    <div class="channel-manager">
       <div @list></div>
-      <button @addButton class="channel-list--add-channel-button">
+      <button @addButton class="channel-manager--add-channel-button">
         +
       </button>
     </div>

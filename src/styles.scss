@@ -1,31 +1,29 @@
 @use './mixins.scss' as *;
 
 body {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
   margin: 0;
   overflow: hidden;
   user-select: none;
-  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 @keyframes pop-in {
-  0% {
-    transform: scale(0.9);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(0.9); }
+
+  50% { transform: scale(1.1); }
+
+  100% { transform: scale(1); }
 }
 
 @keyframes twinkle {
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
+
   100% {
     opacity: 1;
   }
@@ -69,10 +67,10 @@ body {
   }
 
   &--progress {
+    border-radius: 2px;
     height: 100%;
     pointer-events: none;
     position: absolute;
-    border-radius: 2px;
     width: 100%;
   }
 
@@ -93,8 +91,8 @@ body {
     cursor: e-resize;
     height: calc(100% + 10px);
     position: absolute;
-    top: -5px;
     right: -5px;
+    top: -5px;
     width: 20px;
   }
 }
@@ -111,25 +109,25 @@ body {
   }
 }
 
-.channel-list {
+.channel-manager {
   left: 10px;
+  padding-bottom: 38px;
   position: absolute;
   top: 10px;
-  padding-bottom: 38px;
 
   &--add-channel-button {
     @include glass;
     border: 0;
     border-radius: 6px;
-    color: #fff;
-    font-size: 24px;
-    position: absolute;
     bottom: 0;
-    width: 80%;
+    color: #fff;
+    cursor: pointer;
+    font-size: 24px;
     left: 10%;
     padding: 6px 0;
-    cursor: pointer;
+    position: absolute;
     transition: all 0.2s;
+    width: 80%;
 
     &:hover {
       background-color: rgba(50, 100, 255, 0.5);

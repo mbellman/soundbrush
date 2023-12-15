@@ -4,6 +4,9 @@
     "stylelint-order"
   ],
   "rules": {
-    "order/properties-alphabetical-order": true
+    "order/properties-alphabetical-order": true,
+    "rule-empty-line-before": ["always", {
+      "except": ["first-nested"]
+    }]
   }
 }

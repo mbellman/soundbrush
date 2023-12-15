@@ -2,18 +2,19 @@
 
 @keyframes slide-open {
   0% { height: 0; }
+
   100% { height: 300px; }
 }
 
 .channel-panel {
   @include glass;
-  position: relative;
-  width: 150px;
   border-radius: 10px;
+  margin-bottom: 10px;
   overflow: hidden;
   padding: 10px;
+  position: relative;
   transition: height 0.3s, transform 0.2s;
-  margin-bottom: 10px;
+  width: 150px;
 
   &:not(:first-child) {
     animation: slide-open 0.2s;
@@ -41,15 +42,15 @@
     }
 
     &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
       bottom: 0;
+      content: '';
       cursor: pointer;
-      z-index: 5;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
       transition: all 0.2s;
+      z-index: 5;
     }
   }
 
@@ -58,18 +59,18 @@
   }
 
   &--header {
+    color: #ddf;
     font-size: 16px;
     font-weight: bold;
-    color: #ddf;
     margin-bottom: 8px;
   }
 
   canvas {
-    width: 150px;
-    height: 150px;
     border-radius: 8px;
-    overflow: hidden;
-    opacity: 0.8;
     cursor: pointer;
+    height: 150px;
+    opacity: 0.8;
+    overflow: hidden;
+    width: 150px;
   }
 }

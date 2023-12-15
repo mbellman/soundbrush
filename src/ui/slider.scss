@@ -11,20 +11,20 @@
   }
 
   &--bar {
-    height: 3px;
-    border-radius: 2px;
     background-color: #779;
+    border-radius: 2px;
+    height: 3px;
     width: 100%;
   }
 
   &--knob {
-    width: 19px;
-    height: 19px;
-    border-radius: 50%;
     background-color: #88a;
-    transform: translateY(-11px);
+    border-radius: 50%;
     cursor: grab;
+    height: 19px;
+    transform: translateY(-11px);
     transition: background-color 0.3s, box-shadow 0.3s;
+    width: 19px;
 
     &:hover, &:active {
       background-color: #fff;
