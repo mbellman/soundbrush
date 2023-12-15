@@ -1,21 +1,20 @@
 import { State } from './types';
 import { createChannelPanel } from './ui/channel-panel';
+import { createTemplate } from './ui/create-widget';
 
-function createAddChannelButton(state: State) {
-  const button = document.createElement('button');
-
-  button.classList.add('channel-list--add-channel-button');
-  button.innerHTML = '+';
-
-  return button;
-}
-
-// @todo rename createChannelList
-export function createSynthCreator(state: State): HTMLDivElement {
-  const channelList = document.createElement('div');
+// @todo rename createChannelManager
+export function createSynthCreator(state: State) {
+  const { root, list, addButton } = createTemplate(`
+    <div class="channel-list">
+      <div @list></div>
+      <button @addButton class="channel-list--add-channel-button">
+        +
+      </button>
+    </div>
+  `);
 
   function collapseAllChannels() {
-    channelList.querySelectorAll('.channel-panel').forEach(element => {
+    root.querySelectorAll('.channel-panel').forEach(element => {
       element.classList.remove('expanded');
       element.classList.add('collapsed');
     });
@@ -28,26 +27,21 @@ export function createSynthCreator(state: State): HTMLDivElement {
     element.classList.remove('collapsed');
   }
 
-  channelList.classList.add('channel-list');
-
-  channelList.appendChild(createChannelPanel(state, {
+  list.appendChild(createChannelPanel(state, {
     name: 'Channel X',
-    onClickExpand: expandChannel
+    onExpand: expandChannel
   }));
 
-  channelList.appendChild(createAddChannelButton(state));
-
-  // @todo cleanup
-  channelList.querySelector('.channel-list--add-channel-button').addEventListener('click', () => {
+  addButton.addEventListener('click', () => {
     collapseAllChannels();
 
-    channelList.appendChild(createChannelPanel(state, {
+    list.appendChild(createChannelPanel(state, {
       name: 'Channel X',
-      onClickExpand: expandChannel
+      onExpand: expandChannel
     }));
   });
 
-  document.body.appendChild(channelList);
+  document.body.appendChild(root);
 
-  return channelList;
+  return root;
 }

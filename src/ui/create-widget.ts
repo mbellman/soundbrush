@@ -55,3 +55,25 @@ export function createWidget(tag: string, config: WidgetConfig): HTMLElement {
 
   return root.firstChild as HTMLElement;
 }
+
+export function createTemplate(template: string): ElementMap {
+  const root = document.createElement('div');
+  const elementMap: ElementMap = {};
+
+  root.innerHTML = template
+    .trim()
+    .replace(
+      /@[A-Za-z]+/g,
+      name => `data-element="${name.slice(1)}"`
+    );
+
+  root.querySelectorAll('[data-element]').forEach(node => {
+    const name = node.getAttribute('data-element');
+  
+    elementMap[name] = node as HTMLElement;
+  });
+
+  elementMap.root = root.firstChild as HTMLElement;
+
+  return elementMap;
+}

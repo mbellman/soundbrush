@@ -5,31 +5,23 @@ import { MIDDLE_NOTE } from '../constants';
 import { samples } from '../samples';
 import { createSlider } from './slider';
 import { State, Vec2 } from '../types';
-import { createWidget } from './create-widget';
+import { createTemplate, createWidget } from './create-widget';
 import './channel-panel.scss';
 
-/**
- * @todo move to widgets/channel-panel.ts
- */
 interface ChannelPanelConfig {
   name: string
-  onClickExpand: (element: HTMLDivElement) => void
+  onExpand: (element: HTMLElement) => void
 }
 
-export function createChannelPanel(state: State, config: ChannelPanelConfig): HTMLDivElement {
-  const panel = createWidget('div', {
-    template: `
-      <div class="channel-panel">
-        <div class="channel-panel--header">
-          ${config.name}
-        </div>
-        <canvas></canvas>
+export function createChannelPanel(state: State, config: ChannelPanelConfig) {
+  const { root, canvas } = createTemplate(`
+    <div class="channel-panel expanded">
+      <div class="channel-panel--header">
+        ${config.name}
       </div>
-    `
-  });
-
-  const root = document.createElement('div');
-  const canvas = document.createElement('canvas');
+      <canvas @canvas></canvas>
+    </div>
+  `);
 
   let mousedown = false;
   let sample: Sound = null;
@@ -39,7 +31,9 @@ export function createChannelPanel(state: State, config: ChannelPanelConfig): HT
       stopSample();
     }
     
-    sample = audio.createSound(samples.sine, MIDDLE_NOTE);
+    sample = audio.createSound(samples.square, MIDDLE_NOTE);
+
+    // sample._gain.gain.value = 1;
   }
 
   function stopSample() {
@@ -96,26 +90,13 @@ export function createChannelPanel(state: State, config: ChannelPanelConfig): HT
     e.stopPropagation();
   });
 
-  root.classList.add('channel-panel', 'expanded');
+  const { sequence } = state;
 
-  const header = document.createElement('div');
-
-  header.classList.add('channel-panel--header');
-
-  header.innerHTML = config.name;
-
-  root.appendChild;
-  root.appendChild(header);
-  root.appendChild(canvas);
-
-  // @temporary
   root.addEventListener('click', () => {
     if (root.classList.contains('collapsed')) {
-      config.onClickExpand(root);
+      config.onExpand(root);
     }
   });
-
-  const { sequence } = state;
 
   root.appendChild(createSlider({
     label: 'Attack',
@@ -144,7 +125,8 @@ export function createChannelPanel(state: State, config: ChannelPanelConfig): HT
     }
   }));
 
-  clearCanvas(canvas, canvas.getContext('2d'));
+  // @todo avoid casting
+  clearCanvas(canvas as HTMLCanvasElement, (canvas as HTMLCanvasElement).getContext('2d'));
 
   return root;
 }
