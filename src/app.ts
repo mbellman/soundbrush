@@ -7,7 +7,7 @@ import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constan
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
-import { createSynthCreator } from './synth';
+import { createChannelManager } from './ui/channel-manager';
 import { samples } from './samples';
 import { createUi } from './ui';
 
@@ -610,7 +610,7 @@ function updateActiveNoteElements(): void {
 export function init() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
-  const synthCreator = createSynthCreator(state);
+  const channelManager = createChannelManager(state);
   const ui = createUi(state, settings);
 
   noteContainer = createNoteContainer();
@@ -739,5 +739,5 @@ export function init() {
   loop();
 
   document.body.appendChild(canvas);
-  document.body.appendChild(synthCreator);
+  document.body.appendChild(channelManager);
 }

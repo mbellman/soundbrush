@@ -1,9 +1,9 @@
-import { State } from './types';
-import { createChannelPanel } from './ui/channel-panel';
-import { createTemplate } from './ui/create-widget';
+import { State } from '../types';
+import { createChannelPanel } from './channel-panel';
+import { createTemplate } from './create-widget';
+import './channel-manager.scss';
 
-// @todo rename createChannelManager
-export function createSynthCreator(state: State) {
+export function createChannelManager(state: State) {
   const { root, list, addButton } = createTemplate(`
     <div class="channel-manager">
       <div @list></div>
