@@ -4,64 +4,8 @@ import * as audio from './audio';
 import { MIDDLE_NOTE } from './constants';
 import { State, Vec2 } from './types';
 import { samples } from './samples';
-import { clamp } from './utilities';
+import { createSlider } from './ui/slider';
 
-interface SliderConfig {
-  label: string
-  onChange: (value: number) => void
-}
-
-/**
- * @todo move to widgets/slider.ts
- */
-function createSlider(config: SliderConfig) {
-  const slider = document.createElement('div');
-  const label = document.createElement('div');
-  const bar = document.createElement('div');
-  const knob = document.createElement('div');
-
-  slider.classList.add('slider');
-  label.classList.add('slider--label');
-  bar.classList.add('slider--bar');
-  knob.classList.add('slider--knob');
-
-  label.innerHTML = config.label;
-
-  slider.appendChild(label);
-  slider.appendChild(bar);
-  slider.appendChild(knob);
-
-  let dragging = false;
-  let centerOffsetX: number;
-
-  knob.addEventListener('mousedown', e => {
-    const knobBounds = knob.getBoundingClientRect();
-    
-    dragging = true;
-    centerOffsetX = e.clientX - (knobBounds.left + knobBounds.width / 2);
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (dragging) {
-      const barBounds = bar.getBoundingClientRect();
-      const knobBounds = knob.getBoundingClientRect();
-      const min = 0;
-      const max = barBounds.width - knobBounds.width;
-      const knobX = clamp(e.clientX - barBounds.left - centerOffsetX - knobBounds.width / 2, min, max);
-      const value = knobX / (barBounds.width - knobBounds.width);
-
-      knob.style.transform = `translateX(${knobX}px) translateY(-11px)`;
-
-      config.onChange(value);
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    dragging = false;
-  });
-
-  return slider;
-}
 
 /**
  * @todo move to widgets/channel-panel.ts
