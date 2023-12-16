@@ -2,7 +2,7 @@ import { Settings, State } from '../types';
 import { createTemplate } from './create-widget';
 import './scroll-buttons.scss';
 
-export function createScrollButtons(state: State, settings: Settings) {
+export function createScrollButtons(state: State) {
   const { root, left, right } = createTemplate(`
     <div class="scroll-buttons">
       <button @left class="scroll-buttons--button left">«</button>

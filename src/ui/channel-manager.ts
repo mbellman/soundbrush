@@ -28,7 +28,7 @@ export function createChannelManager(state: State) {
   }
 
   list.appendChild(createChannelPanel(state, {
-    name: 'Channel X',
+    name: 'Channel ...',
     onExpand: expandChannel
   }));
 
@@ -36,7 +36,7 @@ export function createChannelManager(state: State) {
     collapseAllChannels();
 
     list.appendChild(createChannelPanel(state, {
-      name: 'Channel X',
+      name: 'Channel ...',
       onExpand: expandChannel
     }));
   });

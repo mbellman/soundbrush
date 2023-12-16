@@ -741,7 +741,7 @@ export function init() {
   // UI
   {
     const channelManager = createChannelManager(state);
-    const scrollButtons = createScrollButtons(state, settings);
+    const scrollButtons = createScrollButtons(state);
   
     document.body.appendChild(channelManager);
     document.body.appendChild(scrollButtons);
