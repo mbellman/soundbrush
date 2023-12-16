@@ -1,9 +1,12 @@
 @use '../mixins.scss' as *;
 
+$collapsed-height: 22px;
+$expanded-height: 328px;
+
 @keyframes slide-open {
   0% { height: 0; }
 
-  100% { height: 300px; }
+  100% { height: $expanded-height; }
 }
 
 .channel-panel {
@@ -31,7 +34,7 @@
   }
 
   &.collapsed {
-    height: 22px;
+    height: $collapsed-height;
 
     > canvas {
       opacity: 0;
