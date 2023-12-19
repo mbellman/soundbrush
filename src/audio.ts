@@ -37,7 +37,7 @@ function initializeContextAndGlobalNodes() {
 }
 
 /**
- * @todo pre-define audio buffers per channel instrument
+ * @todo pre-define audio buffers per sequence channel
  *
  * @internal
  */

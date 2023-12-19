@@ -1,4 +1,4 @@
-import type { Instrument } from './samples';
+import type { Instrument, WaveForm } from './samples';
 import type { Sound } from './audio';
 import * as audio from './audio';
 import { samples } from './samples';
@@ -8,24 +8,29 @@ type SequenceEventHandler = (note?: SequenceNote) => void
 type SequenceEvent = 'play' | 'stop' | 'ended' | 'note-start' | 'note-end'
 
 // @todo use a non-repeatable ID generator
-const generateNoteId = () => Math.random();
+const generateChannelId = () => Math.random().toString().split('.')[1];
+
+// @todo use a non-repeatable ID generator
+const generateNoteId = () => Math.random().toString().split('.')[1];
 
 export interface SequenceNote {
-  instrument: Instrument
   note: number // @todo use a range + linearRampToValueAtTime()
   offset: number
   duration: number
-  id?: number
+  channelId?: string
+  noteId?: string
 }
 
 export interface ChannelConfig {
+  wave: WaveForm
   attack: number
   release: number
   reverb: number
 }
 
 export interface Channel {
-  instrument: Instrument
+  id: string
+  name: string
   config: ChannelConfig
   fx: {
     reverb: ConvolverNode
@@ -34,6 +39,7 @@ export interface Channel {
 }
 
 const DEFAULT_CHANNEL_CONFIG: ChannelConfig = {
+  wave: [ ...samples.square ],
   attack: 0,
   release: 0,
   reverb: 0
@@ -47,12 +53,12 @@ export default class Sequence {
   private playing = false;
   private playStartTime = 0;
 
-  public addNoteToChannel(instrument: Instrument, note: SequenceNote): void {
-    const channel = this.findChannel(instrument) || this.createChannel(instrument);
+  public addNoteToChannel(channelId: string, note: SequenceNote): void {
+    const channel = this.findChannel(channelId) || this.createChannel('Test Channel');
 
     channel.notes.push(note);
 
-    this.sortChannelNotes(instrument);
+    this.sortChannelNotes(channelId);
   }
 
   // @todo make attack + release more dramatic
@@ -90,11 +96,12 @@ export default class Sequence {
     }
   }
 
-  public createChannel(instrument: Instrument): Channel {
+  public createChannel(name: string): Channel {
     audio.ensureContext();
 
     const channel: Channel = {
-      instrument,
+      id: generateChannelId(),
+      name,
       config: DEFAULT_CHANNEL_CONFIG,
       fx: {
         reverb: audio.createReverb()
@@ -110,16 +117,16 @@ export default class Sequence {
   public createNote(note: SequenceNote): SequenceNote {
     return {
       ...note,
-      id: generateNoteId()
+      noteId: generateNoteId()
     };
   }
 
-  public findChannel(instrument: Instrument): Channel {
-    return this.channels.find(channel => channel.instrument === instrument);
+  public findChannel(id: string): Channel {
+    return this.channels.find(channel => channel.id === id);
   }
 
-  public findNote(instrument: Instrument, id: number): SequenceNote {
-    return this.findChannel(instrument)?.notes.find(note => note.id === id);
+  public findNote(channelId: string, noteId: string): SequenceNote {
+    return this.findChannel(channelId)?.notes.find(note => note.noteId === noteId);
   }
 
   public getNextNote(): SequenceNote {
@@ -161,8 +168,8 @@ export default class Sequence {
       const chunkNotes = channel.notes;
 
       for (const sequenceNote of chunkNotes) {
-        const { instrument, note, offset, duration } = sequenceNote;
-        const sound = audio.createSound(samples[instrument], note, offset);
+        const { note, offset, duration } = sequenceNote;
+        const sound = audio.createSound(channel.config.wave, note, offset);
         const stopTime = currentTime + offset + duration;
 
         sound._endTime = stopTime;
@@ -185,6 +192,11 @@ export default class Sequence {
       }
     }
 
+    // @todo see if this needs to be optimized
+    this.pendingNotes.sort((a, b) => {
+      return a.offset > b.offset ? 1 : -1;
+    });
+
     lastNode?.addEventListener('ended', () => {
       this.callEventHandlers('ended');
 
@@ -194,18 +206,18 @@ export default class Sequence {
     this.callEventHandlers('play');
   }
 
-  public removeNoteFromChannel(instrument: Instrument, id: number): void {
-    const channel = this.findChannel(instrument);
+  public removeNoteFromChannel(channelId: string, noteId: string): void {
+    const channel = this.findChannel(channelId);
 
     if (channel) {
-      const index = channel.notes.findIndex(note => note.id === id);
+      const index = channel.notes.findIndex(note => note.noteId === noteId);
 
       channel.notes.splice(index, 1);
     }
   }
 
-  public sortChannelNotes(instrument: Instrument): void {
-    const channel = this.findChannel(instrument);
+  public sortChannelNotes(channelId: string): void {
+    const channel = this.findChannel(channelId);
 
     if (channel) {
       // @todo see if this needs to be optimized
@@ -239,8 +251,8 @@ export default class Sequence {
     }
   }
 
-  public updateChannelConfiguration(instrument: Instrument, config: Partial<ChannelConfig>): void {
-    const channel = this.findChannel(instrument) || this.createChannel(instrument);
+  public updateChannelConfig(channelId: string, config: Partial<ChannelConfig>): void {
+    const channel = this.findChannel(channelId) || this.createChannel('Test Channel');
 
     if (channel) {
       channel.config = {

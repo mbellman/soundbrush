@@ -5,17 +5,12 @@ Draw things and make music.
 
 ### features:
 
-* don't place notes when focusing back in the window
-* window resize corrections
-* scroll shift bug
-
 * note resizing from the left edge
 * 16th notes
 * multi-note selections
 * * undo support
 
 * custom instruments
-* channel switching
 * measures
 * serialization
 
@@ -25,3 +20,5 @@ Draw things and make music.
 
 * y scroll shift
 * note continuity closure/misbehavior
+* don't place notes when focusing back in the window
+* window resize corrections

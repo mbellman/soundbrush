@@ -6,14 +6,16 @@ import { samples } from '../samples';
 import { createSlider } from './slider';
 import { State, Vec2 } from '../types';
 import { createTemplate, createWidget } from './create-widget';
+import { ChannelConfig } from '../Sequence';
 import './channel-panel.scss';
 
 interface ChannelPanelConfig {
   name: string
   onExpand: (element: HTMLElement) => void
+  onChangeChannelConfig: (config: Partial<ChannelConfig>) => void
 }
 
-export function createChannelPanel(state: State, config: ChannelPanelConfig) {
+export function createChannelPanel(config: ChannelPanelConfig) {
   const { root, canvas } = createTemplate(`
     <div class="channel-panel expanded">
       <div class="channel-panel--header">
@@ -90,8 +92,6 @@ export function createChannelPanel(state: State, config: ChannelPanelConfig) {
     e.stopPropagation();
   });
 
-  const { sequence } = state;
-
   root.addEventListener('click', () => {
     if (root.classList.contains('collapsed')) {
       config.onExpand(root);
@@ -100,29 +100,17 @@ export function createChannelPanel(state: State, config: ChannelPanelConfig) {
 
   root.appendChild(createSlider({
     label: 'Attack',
-    onChange: attack => {
-      sequence.updateChannelConfiguration(state.selectedInstrument, {
-        attack
-      });
-    }
+    onChange: attack => config.onChangeChannelConfig({ attack })
   }));
 
   root.appendChild(createSlider({
     label: 'Release',
-    onChange: release => {
-      sequence.updateChannelConfiguration(state.selectedInstrument, {
-        release
-      });
-    }
+    onChange: release => config.onChangeChannelConfig({ release })
   }));
 
   root.appendChild(createSlider({
     label: 'Reverb',
-    onChange: reverb => {
-      sequence.updateChannelConfiguration(state.selectedInstrument, {
-        reverb
-      });
-    }
+    onChange: reverb => config.onChangeChannelConfig({ reverb })
   }));
 
   // @todo avoid casting

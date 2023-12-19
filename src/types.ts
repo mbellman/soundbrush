@@ -18,7 +18,8 @@ export interface Settings {
 }
 
 export interface State {
-  selectedInstrument: Instrument
+  activeChannelId: string
+  sequence: Sequence
   scroll: Vec2
   targetScroll: Vec2
   running: boolean
@@ -28,7 +29,6 @@ export interface State {
   dragStart: Vec2
   hoverTarget: EventTarget
   heldKeys: Record<string, boolean>
-  sequence: Sequence
   selectedNoteElement: HTMLDivElement
   selectedNoteStartX: number
   selectedNoteAction: 'move' | 'resize'

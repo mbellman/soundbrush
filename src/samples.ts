@@ -14,7 +14,7 @@ export const samples = {
   square: [
     ...new Array(50).fill(1),
     ...new Array(50).fill(-1)
-  ]
+  ] as WaveForm
 };
 
 export type Instrument = keyof typeof samples;

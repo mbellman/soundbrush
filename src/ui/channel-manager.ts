@@ -1,9 +1,19 @@
-import { State } from '../types';
 import { createChannelPanel } from './channel-panel';
 import { createTemplate } from './create-widget';
+import { ChannelConfig } from '../Sequence';
 import './channel-manager.scss';
 
-export function createChannelManager(state: State) {
+interface ChannelManagerConfig {
+  onChannelPanelAdded: (element: HTMLElement) => void
+  onChangeChannelConfig: (config: Partial<ChannelConfig>) => void
+  onChannelPanelSelected: (element: HTMLElement) => void
+}
+
+export function createChannelManager({
+  onChannelPanelAdded,
+  onChangeChannelConfig,
+  onChannelPanelSelected
+}: ChannelManagerConfig) {
   const { root, list, addButton } = createTemplate(`
     <div class="channel-manager">
       <div @list></div>
@@ -25,23 +35,30 @@ export function createChannelManager(state: State) {
 
     element.classList.add('expanded');
     element.classList.remove('collapsed');
+
+    onChannelPanelSelected(element);
   }
 
-  list.appendChild(createChannelPanel(state, {
-    name: 'Channel ...',
-    onExpand: expandChannel
-  }));
+  function addNewChannel() {
+    const panel = createChannelPanel({
+      name: 'Channel ...',
+      onExpand: expandChannel,
+      onChangeChannelConfig      
+    });
+
+    list.appendChild(panel);
+  
+    onChannelPanelAdded(panel);
+  }
 
   addButton.addEventListener('click', () => {
     collapseAllChannels();
-
-    list.appendChild(createChannelPanel(state, {
-      name: 'Channel ...',
-      onExpand: expandChannel
-    }));
+    addNewChannel();
   });
 
   document.body.appendChild(root);
+
+  addNewChannel();
 
   return root;
 }

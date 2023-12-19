@@ -29,7 +29,7 @@ const settings: Settings = {
 };
 
 const state: State = {
-  selectedInstrument: 'square',
+  activeChannelId: null,
   scroll: { x: 0, y: 0 },
   targetScroll: { x: 0, y: 0 },
   running: true,
@@ -49,18 +49,18 @@ const state: State = {
 /**
  * @internal
  */
-function findNoteElement(instrument: Instrument, id: number): HTMLDivElement {
-  return noteContainer.querySelector(`[data-instrument="${instrument}"][data-id="${id}"]`);
+function findNoteElement(channelId: string, noteId: string): HTMLDivElement {
+  return noteContainer.querySelector(`[data-channelId="${channelId}"][data-noteId="${noteId}"]`);
 }
 
 /**
  * @internal
  */
-function syncNoteElement(instrument: Instrument, id: number) {
-  const element = findNoteElement(instrument, id);
+function syncNoteElement(channelId: string, noteId: string) {
+  const element = findNoteElement(channelId, noteId);
 
   if (element) {
-    const sequenceNote = state.sequence.findNote(instrument, id);
+    const sequenceNote = state.sequence.findNote(channelId, noteId);
     const noteBarHeight = window.innerHeight / settings.divisions;
     const elementHeight = noteBarHeight - 10;
     const xOffset = sequenceNote.offset * 400;
@@ -88,7 +88,7 @@ function updateNoteElementProgress(element: HTMLDivElement, progress: number): v
 /**
  * @internal
  */
-function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
+function createNoteElement(channelId: string, noteId: string): HTMLDivElement {
   const element = document.createElement('div');
   const progressBar = document.createElement('div');
   const mover = document.createElement('div');
@@ -99,8 +99,8 @@ function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
 
   element.classList.add('note');
 
-  element.setAttribute('data-instrument', instrument);
-  element.setAttribute('data-id', String(id));
+  element.setAttribute('data-channelId', channelId);
+  element.setAttribute('data-noteId', noteId);
 
   element.style.height = `${elementHeight}px`;
 
@@ -114,7 +114,7 @@ function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
 
   noteContainer.appendChild(element);
 
-  syncNoteElement(instrument, id);
+  syncNoteElement(channelId, noteId);
 
   return element;
 }
@@ -123,9 +123,9 @@ function createNoteElement(instrument: Instrument, id: number): HTMLDivElement {
  * @internal
  */
 function syncNoteProperties(noteElement: HTMLElement) {
-  const instrument = noteElement.getAttribute('data-instrument') as Instrument;
-  const noteId = Number(noteElement.getAttribute('data-id'));
-  const sequenceNote = state.sequence.findNote(instrument, noteId);
+  const channelId = noteElement.getAttribute('data-channelId');
+  const noteId = noteElement.getAttribute('data-noteId');
+  const sequenceNote = state.sequence.findNote(channelId, noteId);
   
   if (sequenceNote) {
     const { top: y } = noteElement.getBoundingClientRect();
@@ -134,7 +134,7 @@ function syncNoteProperties(noteElement: HTMLElement) {
     sequenceNote.offset = noteElement.offsetLeft / 400;
     sequenceNote.duration = noteElement.clientWidth / 400;
 
-    state.sequence.sortChannelNotes(instrument);
+    state.sequence.sortChannelNotes(channelId);
   }
 }
 
@@ -196,12 +196,13 @@ function setCursor(cursor: string): void {
  * @internal
  */
 function startCurrentChannelSound(): void {
-  const sound = audio.startNewSound(samples[state.selectedInstrument], 0);
-  let currentChannel = state.sequence.findChannel(state.selectedInstrument);
+  let currentChannel = state.sequence.findChannel(state.activeChannelId);
 
   if (!currentChannel) {
-    currentChannel = state.sequence.createChannel(state.selectedInstrument);
+    currentChannel = state.sequence.createChannel('Test Channel');
   }
+
+  const sound = audio.startNewSound(currentChannel.config.wave, 0);
 
   state.sequence.applyChannelFx(sound, currentChannel);
 }
@@ -244,20 +245,20 @@ function onCanvasMouseDown(e: MouseEvent) {
   const duration = (settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH) / 400;
 
   const sequenceNote = sequence.createNote({
-    instrument: state.selectedInstrument,
     note,
     offset,
-    duration
+    duration,
+    channelId: state.activeChannelId
   });
 
-  sequence.addNoteToChannel(state.selectedInstrument, sequenceNote);
+  sequence.addNoteToChannel(state.activeChannelId, sequenceNote);
 
   state.history.push({
     action: 'add',
     note: sequenceNote
   });
 
-  state.selectedNoteElement = createNoteElement(state.selectedInstrument, sequenceNote.id);
+  state.selectedNoteElement = createNoteElement(state.activeChannelId, sequenceNote.noteId);
   state.selectedNoteStartX = state.selectedNoteElement.offsetLeft;
   state.selectedNoteAction = 'resize';
 
@@ -485,15 +486,16 @@ function undoLastAction() {
   switch (lastAction.action) {
     case 'add': {
       const { note } = lastAction;
+      const { channelId, noteId } = note;
 
-      state.sequence.removeNoteFromChannel(note.instrument, note.id);
+      state.sequence.removeNoteFromChannel(channelId, noteId);
 
       // @todo cleanup (e.g. removeNoteElement())
       if (noteElements.length > 0) {
-        const element = findNoteElement(note.instrument, note.id);
+        const element = findNoteElement(channelId, noteId);
         const index = noteElements.findIndex(noteElement => noteElement === element);
 
-        noteContainer.removeChild(findNoteElement(note.instrument, note.id));
+        noteContainer.removeChild(findNoteElement(channelId, noteId));
         noteElements.splice(index, 1);
       }
 
@@ -572,7 +574,7 @@ function updateActiveNoteElements(): void {
   const offsetTime = state.sequence.getPlayOffsetTime();
 
   for (const element of activeNoteElements) {
-    const id = Number(element.getAttribute('data-id'));
+    const id = element.getAttribute('data-noteId');
     const bounds = element.getBoundingClientRect();
     const start = element.offsetLeft / 400;
     const end = (element.offsetLeft + element.clientWidth) / 400;
@@ -644,25 +646,27 @@ export function init() {
   });
 
   state.sequence.on('note-start', note => {
-    const element = findNoteElement(note.instrument, note.id);
+    const { channelId, noteId } = note;
+    const element = findNoteElement(channelId, noteId);
 
     activeNoteElements.push(element);
 
-    brushStrokeMap[note.id] = visuals.createNewBrushStroke();
+    brushStrokeMap[noteId] = visuals.createNewBrushStroke();
     // @todo purge empty next-note brush strokes
-    brushStrokeMap[`next${note.id}`] = visuals.createNewBrushStroke({ radius: 10 });
+    brushStrokeMap[`next${noteId}`] = visuals.createNewBrushStroke({ radius: 10 });
   });
 
   state.sequence.on('note-end', note => {
-    const element = findNoteElement(note.instrument, note.id);
+    const { channelId, noteId } = note;
+    const element = findNoteElement(channelId, noteId);
     const index = activeNoteElements.findIndex(noteElement => noteElement === element);
 
     activeNoteElements.splice(index, 1);
 
     updateNoteElementProgress(element, 1);
 
-    delete brushStrokeMap[note.id];
-    delete brushStrokeMap[`next${note.id}`];
+    delete brushStrokeMap[noteId];
+    delete brushStrokeMap[`next${noteId}`];
   });
 
   document.addEventListener('mousedown', e => {
@@ -740,7 +744,24 @@ export function init() {
 
   // UI
   {
-    const channelManager = createChannelManager(state);
+    const { sequence } = state;
+
+    const channelManager = createChannelManager({
+      onChannelPanelAdded: (panel) => {
+        const channel = sequence.createChannel('Test Channel');
+
+        panel.setAttribute('data-channelId', channel.id);
+
+        state.activeChannelId = channel.id;
+      },
+      onChangeChannelConfig: (config) => {
+        sequence.updateChannelConfig(state.activeChannelId, config);
+      },
+      onChannelPanelSelected: (panel) => {
+        state.activeChannelId = panel.getAttribute('data-channelId');
+      }
+    });
+
     const scrollButtons = createScrollButtons(state);
   
     document.body.appendChild(channelManager);
