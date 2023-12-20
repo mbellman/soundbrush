@@ -1,7 +1,6 @@
 import Sequence, { SequenceNote } from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
-import type { Instrument } from './samples';
 import type { BrushStroke } from './visuals';
 import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
@@ -9,10 +8,9 @@ import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 import { createChannelManager } from './ui/channel-manager';
 import { createScrollButtons } from './ui/scroll-buttons';
-import { samples } from './samples';
 
 let noteContainer: HTMLDivElement = null;
-const noteElements: HTMLDivElement[] = [];
+const noteElements: HTMLDivElement[] = []; // @todo eliminate this
 const activeNoteElements: HTMLDivElement[] = [];
 
 let playBar: HTMLDivElement = null;
@@ -22,12 +20,14 @@ let playBar: HTMLDivElement = null;
  */
 const brushStrokeMap: Record<string | number, BrushStroke> = {};
 
+// @todo move to core
 const settings: Settings = {
   divisions: 25,
   microtonal: false,
   useSnapping: true
 };
 
+// @todo move to core
 const state: State = {
   activeChannelId: null,
   scroll: { x: 0, y: 0 },
@@ -58,9 +58,9 @@ function findNoteElement(channelId: string, noteId: string): HTMLDivElement {
  */
 function syncNoteElement(channelId: string, noteId: string) {
   const element = findNoteElement(channelId, noteId);
+  const sequenceNote = state.sequence.findNote(channelId, noteId);
 
-  if (element) {
-    const sequenceNote = state.sequence.findNote(channelId, noteId);
+  if (element && sequenceNote) {
     const noteBarHeight = window.innerHeight / settings.divisions;
     const elementHeight = noteBarHeight - 10;
     const xOffset = sequenceNote.offset * 400;
@@ -86,6 +86,8 @@ function updateNoteElementProgress(element: HTMLDivElement, progress: number): v
 }
 
 /**
+ * @todo cleanup
+ *
  * @internal
  */
 function createNoteElement(channelId: string, noteId: string): HTMLDivElement {
@@ -112,7 +114,9 @@ function createNoteElement(channelId: string, noteId: string): HTMLDivElement {
   element.appendChild(mover);
   element.appendChild(resizer);
 
-  noteContainer.appendChild(element);
+  const activeNoteContainer = noteContainer.querySelector(`[data-channelId="${state.activeChannelId}"]`);
+
+  activeNoteContainer.appendChild(element);
 
   syncNoteElement(channelId, noteId);
 
@@ -495,7 +499,7 @@ function undoLastAction() {
         const element = findNoteElement(channelId, noteId);
         const index = noteElements.findIndex(noteElement => noteElement === element);
 
-        noteContainer.removeChild(findNoteElement(channelId, noteId));
+        element.remove();
         noteElements.splice(index, 1);
       }
 
@@ -515,8 +519,20 @@ function createNoteContainer(): HTMLDivElement {
 
   container.classList.add('note-container');
 
+  // @todo don't do this here
   document.body.appendChild(container);
   
+  return container;
+}
+
+/**
+ * @internal
+ */
+function createChannelNoteContainer(channelId: string): HTMLDivElement {
+  const container = document.createElement('div');
+
+  container.setAttribute('data-channelId', channelId);
+
   return container;
 }
 
@@ -531,6 +547,17 @@ function createPlayBar(): HTMLDivElement {
   document.body.appendChild(bar);
 
   return bar;
+}
+
+/**
+ * @internal
+ */
+function focusNotesByChannelId(channelId: string) {
+  Array.from(noteContainer.children).forEach((child: HTMLElement) => {
+    child.style.opacity = '0.2';
+  });
+
+  (noteContainer.querySelector(`[data-channelId="${channelId}"]`) as HTMLElement).style.opacity = '1';
 }
 
 /**
@@ -750,10 +777,15 @@ export function init() {
     // refactor state management stuff into core
     const channelManager = createChannelManager({
       onChannelPanelAdded: panel => {
-        const channel = sequence.createChannel('Test Channel');
+        const channelName = `Channel ${sequence.getChannels().length + 1}`;
+        const channel = sequence.createChannel(channelName);
 
         panel.setAttribute('data-channelId', channel.id);
         (panel.querySelector('.channel-panel--name-input') as HTMLInputElement).value = channel.name;
+
+        noteContainer.appendChild(createChannelNoteContainer(channel.id));
+
+        focusNotesByChannelId(channel.id);
 
         state.activeChannelId = channel.id;
       },
@@ -767,6 +799,8 @@ export function init() {
       },
       onChannelPanelSelected: panel => {
         state.activeChannelId = panel.getAttribute('data-channelId');
+
+        focusNotesByChannelId(state.activeChannelId);
       }
     });
 

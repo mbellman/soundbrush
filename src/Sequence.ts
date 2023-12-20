@@ -121,6 +121,10 @@ export default class Sequence {
     };
   }
 
+  public getChannels(): Channel[] {
+    return this.channels;
+  }
+
   public findChannel(channelId: string): Channel {
     return this.channels.find(channel => channel.id === channelId);
   }

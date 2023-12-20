@@ -11,6 +11,8 @@ Draw things and make music.
 * * undo support
 
 * custom instruments
+* note deletion
+* channel deletion
 * measures
 * serialization
 
