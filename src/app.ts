@@ -746,18 +746,26 @@ export function init() {
   {
     const { sequence } = state;
 
+    // @todo don't do this silly event propagation thing;
+    // refactor state management stuff into core
     const channelManager = createChannelManager({
-      onChannelPanelAdded: (panel) => {
+      onChannelPanelAdded: panel => {
         const channel = sequence.createChannel('Test Channel');
 
         panel.setAttribute('data-channelId', channel.id);
+        (panel.querySelector('.channel-panel--name-input') as HTMLInputElement).value = channel.name;
 
         state.activeChannelId = channel.id;
       },
-      onChangeChannelConfig: (config) => {
+      onChangeChannelName: name => {
+        const activeChannel = sequence.findChannel(state.activeChannelId);
+
+        activeChannel.name = name;
+      },
+      onChangeChannelConfig: config => {
         sequence.updateChannelConfig(state.activeChannelId, config);
       },
-      onChannelPanelSelected: (panel) => {
+      onChannelPanelSelected: panel => {
         state.activeChannelId = panel.getAttribute('data-channelId');
       }
     });

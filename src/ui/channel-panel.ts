@@ -12,14 +12,20 @@ import './channel-panel.scss';
 interface ChannelPanelConfig {
   name: string
   onExpand: (element: HTMLElement) => void
+  onChangeChannelName: (name: string) => void
   onChangeChannelConfig: (config: Partial<ChannelConfig>) => void
 }
 
 export function createChannelPanel(config: ChannelPanelConfig) {
-  const { root, canvas } = createTemplate(`
+  const { root, nameInput, canvas } = createTemplate(`
     <div class="channel-panel expanded">
       <div class="channel-panel--header">
-        ${config.name}
+        <input
+          @nameInput
+          type="text"
+          class="channel-panel--name-input"
+          value='${config.name}'
+        ></input>
       </div>
       <canvas @canvas></canvas>
     </div>
@@ -45,6 +51,16 @@ export function createChannelPanel(config: ChannelPanelConfig) {
 
     sample = null;
   }
+
+  nameInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+  });
+
+  nameInput.addEventListener('keyup', e => {
+    config.onChangeChannelName((nameInput as HTMLInputElement).value);
+
+    e.stopPropagation();
+  });
 
   canvas.addEventListener('mousedown', e => {
     mousedown = true;

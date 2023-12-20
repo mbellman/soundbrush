@@ -5,12 +5,14 @@ import './channel-manager.scss';
 
 interface ChannelManagerConfig {
   onChannelPanelAdded: (element: HTMLElement) => void
+  onChangeChannelName: (name: string) => void
   onChangeChannelConfig: (config: Partial<ChannelConfig>) => void
   onChannelPanelSelected: (element: HTMLElement) => void
 }
 
 export function createChannelManager({
   onChannelPanelAdded,
+  onChangeChannelName,
   onChangeChannelConfig,
   onChannelPanelSelected
 }: ChannelManagerConfig) {
@@ -43,6 +45,7 @@ export function createChannelManager({
     const panel = createChannelPanel({
       name: 'Channel ...',
       onExpand: expandChannel,
+      onChangeChannelName,
       onChangeChannelConfig      
     });
 

@@ -121,8 +121,8 @@ export default class Sequence {
     };
   }
 
-  public findChannel(id: string): Channel {
-    return this.channels.find(channel => channel.id === id);
+  public findChannel(channelId: string): Channel {
+    return this.channels.find(channel => channel.id === channelId);
   }
 
   public findNote(channelId: string, noteId: string): SequenceNote {
