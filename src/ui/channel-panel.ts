@@ -52,12 +52,20 @@ export function createChannelPanel(config: ChannelPanelConfig) {
     sample = null;
   }
 
+  function isCollapsed() {
+    return root.classList.contains('collapsed');
+  }
+
   nameInput.addEventListener('keydown', e => {
     e.stopPropagation();
   });
 
   nameInput.addEventListener('keyup', e => {
     config.onChangeChannelName((nameInput as HTMLInputElement).value);
+
+    if (e.key === 'Enter') {
+      nameInput.blur();
+    }
 
     e.stopPropagation();
   });
@@ -109,8 +117,28 @@ export function createChannelPanel(config: ChannelPanelConfig) {
   });
 
   root.addEventListener('click', () => {
-    if (root.classList.contains('collapsed')) {
+    if (isCollapsed()) {
       config.onExpand(root);
+    }
+  });
+
+  root.addEventListener('mouseenter', () => {
+    if (isCollapsed()) {
+      // @todo ui.setChannelOpacity(channelId, 0.5)
+      const channelId = root.getAttribute('data-channelId');
+      const noteContainer = document.querySelector('.note-container').querySelector(`[data-channelId="${channelId}"]`) as HTMLElement;
+
+      noteContainer.style.opacity = '0.5';
+    }
+  });
+
+  root.addEventListener('mouseleave', () => {
+    if (isCollapsed()) {
+      // @todo ui.setChannelOpacity(channelId, 0.2)
+      const channelId = root.getAttribute('data-channelId');
+      const noteContainer = document.querySelector('.note-container').querySelector(`[data-channelId="${channelId}"]`) as HTMLElement;
+
+      noteContainer.style.opacity = '0.2';
     }
   });
 

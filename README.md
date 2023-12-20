@@ -5,18 +5,21 @@ Draw things and make music.
 
 ### features:
 
-* note resizing from the left edge
-* 16th notes
+* measures
 * multi-note selections
 * * undo support
+
+* note resizing from the left edge
+* 16th notes
+* have release follow the end of the note
 
 * custom instruments
 * note deletion
 * channel deletion
-* measures
 * serialization
 
 * note continuity previews
+* constrain note predictions to same channel
 
 ### bugs:
 
