@@ -34,6 +34,10 @@ body {
 }
 
 .note-container {
+  > * {
+    transition: opacity 0.2s;
+  }
+
   &.playing {
     .note {
       background-color: #000 !important;
