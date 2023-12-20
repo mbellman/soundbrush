@@ -563,6 +563,15 @@ function focusNotesByChannelId(channelId: string) {
 /**
  * @internal
  */
+function focusAllNotes() {
+  Array.from(noteContainer.children).forEach((child: HTMLElement) => {
+    child.style.opacity = '1';
+  });
+}
+
+/**
+ * @internal
+ */
 function predictNextNote(note: number, channelId: string, startTime: number, beatsAheadLimit: number): SequenceNote {
   const pendingNotes = state.sequence.getPendingNotes();
   const offsetLimit = startTime + ((beatsAheadLimit + 1) * DEFAULT_BEAT_LENGTH) / 400;
@@ -649,6 +658,8 @@ export function init() {
   playBar = createPlayBar();
 
   state.sequence.on('play', () => {
+    focusAllNotes();
+
     noteContainer.classList.add('playing');
     playBar.classList.add('visible');
 
@@ -659,6 +670,8 @@ export function init() {
 
   // @todo consolidate with below
   state.sequence.on('stop', () => {
+    focusNotesByChannelId(state.activeChannelId);
+
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
 
@@ -669,6 +682,8 @@ export function init() {
 
   // @todo consolidate with above
   state.sequence.on('ended', () => {
+    focusNotesByChannelId(state.activeChannelId);
+
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
 
