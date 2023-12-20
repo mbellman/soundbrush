@@ -563,7 +563,7 @@ function focusNotesByChannelId(channelId: string) {
 /**
  * @internal
  */
-function predictNextNote(note: number, startTime: number, beatsAheadLimit: number): SequenceNote {
+function predictNextNote(note: number, channelId: string, startTime: number, beatsAheadLimit: number): SequenceNote {
   const pendingNotes = state.sequence.getPendingNotes();
   const offsetLimit = startTime + ((beatsAheadLimit + 1) * DEFAULT_BEAT_LENGTH) / 400;
   let minimumWeight = Number.POSITIVE_INFINITY;
@@ -571,6 +571,10 @@ function predictNextNote(note: number, startTime: number, beatsAheadLimit: numbe
 
   // @todo improve
   for (const sequenceNote of pendingNotes) {
+    if (sequenceNote.channelId !== channelId) {
+      continue;
+    }
+
     if (sequenceNote.offset > offsetLimit) {
       break;
     }
@@ -601,7 +605,8 @@ function updateActiveNoteElements(): void {
   const offsetTime = state.sequence.getPlayOffsetTime();
 
   for (const element of activeNoteElements) {
-    const id = element.getAttribute('data-noteId');
+    const channelId = element.getAttribute('data-channelId');
+    const noteId = element.getAttribute('data-noteId');
     const bounds = element.getBoundingClientRect();
     const start = element.offsetLeft / 400;
     const end = (element.offsetLeft + element.clientWidth) / 400;
@@ -618,11 +623,11 @@ function updateActiveNoteElements(): void {
     const ax = x + state.scroll.x;
     const ay = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5;
 
-    visuals.saveDrawPointToBrushStroke(brushStrokeMap[id], ax, ay, color);
+    visuals.saveDrawPointToBrushStroke(brushStrokeMap[noteId], ax, ay, color);
 
     // @todo improve
     const noteBeatLength = element.clientWidth / DEFAULT_BEAT_LENGTH;
-    const nextNote = predictNextNote(note, start, noteBeatLength);
+    const nextNote = predictNextNote(note, channelId, start, noteBeatLength);
 
     if (nextNote) {
       const nextY = getAbsoluteYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
@@ -631,7 +636,7 @@ function updateActiveNoteElements(): void {
       const previewY = lerp(ay, nextY, nextNoteProgress);
       const blendedColor = visuals.lerpColor(color, nextColor, nextNoteProgress);
 
-      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${id}`], ax, previewY, blendedColor);
+      visuals.saveDrawPointToBrushStroke(brushStrokeMap[`next${noteId}`], ax, previewY, blendedColor);
     }
   }
 }

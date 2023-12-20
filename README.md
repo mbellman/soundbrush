@@ -19,7 +19,6 @@ Draw things and make music.
 * serialization
 
 * note continuity previews
-* constrain note predictions to same channel
 
 ### bugs:
 
