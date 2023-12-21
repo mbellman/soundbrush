@@ -12,10 +12,10 @@ interface Color {
 interface DrawPoint extends Vec2 {
   time: number
   color: Color
+  radius: number
 }
 
 export interface BrushStroke {
-  radius: number
   points: DrawPoint[]
 }
 
@@ -75,14 +75,13 @@ export function colorToRgbString({ r, g, b }: Color, factor = 1): string {
 
 export function createNewBrushStroke({ radius = 20 } = {}): BrushStroke {
   brushStrokes.push({
-    radius,
     points: []
   });
 
   return brushStrokes[brushStrokes.length - 1];
 }
 
-export function saveDrawPointToBrushStroke(brushStroke: BrushStroke, x: number, y: number, color: Color): void {
+export function saveDrawPointToBrushStroke(brushStroke: BrushStroke, x: number, y: number, color: Color, radius = 20): void {
   const { points } = brushStroke;
 
   if (points) {
@@ -90,15 +89,16 @@ export function saveDrawPointToBrushStroke(brushStroke: BrushStroke, x: number, 
       x,
       y,
       time: Date.now(),
-      color
+      color,
+      radius
     });
   }
 }
 
-export function saveDrawPoint(x: number, y: number, color: Color) {
+export function saveDrawPoint(x: number, y: number, color: Color, radius = 20) {
   const brushStroke = brushStrokes[brushStrokes.length - 1] || createNewBrushStroke();
 
-  saveDrawPointToBrushStroke(brushStroke, x, y, color);
+  saveDrawPointToBrushStroke(brushStroke, x, y, color, radius);
 }
 
 export function clearUnusedDrawPointsAndBrushStrokes() {
@@ -260,13 +260,13 @@ export function drawBrushStrokes(ctx: CanvasRenderingContext2D, state: State) {
   const dpr = window.devicePixelRatio;
   const { scroll } = state;
 
-  for (const { points, radius: baseRadius } of brushStrokes) {
+  for (const { points } of brushStrokes) {
     for (let i = 0; i < points.length; i += 2) {
       const pm2 = points[i - 2];
       const pm1 = points[i - 1];
       const p = points[i];
       const lifetime = timeSince(p.time) / FADE_OUT_TIME;
-      const radius = Math.max(0, baseRadius * (1 - lifetime));
+      const radius = Math.max(0, p.radius * (1 - lifetime));
 
       if (pm2 && pm1) {
         const { x: dx, y: dy } = normalize({

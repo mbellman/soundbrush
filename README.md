@@ -5,20 +5,23 @@ Draw things and make music.
 
 ### features:
 
+* tempo
+* master volume
+
 * measures
+* serialization
 * multi-note selections
 * * undo support
-
 * note resizing from the left edge
 * 16th notes
-* have release follow the end of the note
-
 * custom instruments
 * note deletion
 * channel deletion
-* serialization
 
-* note continuity previews
+### fx
+
+* note continuity preview sparkles
+* webgl
 
 ### bugs:
 

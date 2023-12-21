@@ -617,10 +617,10 @@ function updateActiveNoteElements(): void {
     const channelId = element.getAttribute('data-channelId');
     const noteId = element.getAttribute('data-noteId');
     const bounds = element.getBoundingClientRect();
-    const start = element.offsetLeft / 400;
-    const end = (element.offsetLeft + element.clientWidth) / 400;
-    const duration = end - start;
-    const progress = (offsetTime - start) / duration;
+    const startTime = element.offsetLeft / 400;
+    const endTime = (element.offsetLeft + element.clientWidth) / 400;
+    const duration = endTime - startTime;
+    const progress = (offsetTime - startTime) / duration;
 
     updateNoteElementProgress(element, progress);
 
@@ -629,19 +629,23 @@ function updateActiveNoteElements(): void {
     const note = getNoteAtYCoordinate(y);
     const color = visuals.noteToColor(note);
 
+    // @todo synchronize with release
+    const falloff = progress < 1 ? 0 : 2 * (offsetTime - endTime);
     const ax = x + state.scroll.x;
-    const ay = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5;
+    const ay = getAbsoluteYCoordinateForNote(note) + elementHeight / 2 + 5 + 50 * Math.pow(falloff, 3);
+    const radius = 20 * (falloff > 0 ? Math.pow(1 / (1 + falloff), 3) : 1);
 
-    visuals.saveDrawPointToBrushStroke(brushStrokeMap[noteId], ax, ay, color);
+    visuals.saveDrawPointToBrushStroke(brushStrokeMap[noteId], ax, ay, color, radius);
 
-    // @todo improve
+    // @todo predict next note on note start, track running preview lines independently
     const noteBeatLength = element.clientWidth / DEFAULT_BEAT_LENGTH;
-    const nextNote = predictNextNote(note, channelId, start, noteBeatLength);
+    const nextNote = predictNextNote(note, channelId, startTime, noteBeatLength);
 
     if (nextNote) {
       const nextY = getAbsoluteYCoordinateForNote(nextNote.note) + elementHeight / 2 + 5;
       const nextColor = visuals.noteToColor(nextNote.note);
-      const nextNoteProgress = Math.pow((offsetTime - start) / (nextNote.offset - start), 2);
+      const nextNoteProgress = Math.pow((offsetTime - startTime) / (nextNote.offset - startTime), 2);
+      // @todo custom easing per preview line
       const previewY = lerp(ay, nextY, nextNoteProgress);
       const blendedColor = visuals.lerpColor(color, nextColor, nextNoteProgress);
 
