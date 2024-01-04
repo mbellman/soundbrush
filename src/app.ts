@@ -10,7 +10,6 @@ import { createChannelManager } from './ui/channel-manager';
 import { createScrollButtons } from './ui/scroll-buttons';
 
 let noteContainer: HTMLDivElement = null;
-const noteElements: HTMLDivElement[] = []; // @todo eliminate this
 const activeNoteElements: HTMLDivElement[] = [];
 
 let playBar: HTMLDivElement = null;
@@ -45,6 +44,13 @@ const state: State = {
   selectedNoteAction: 'move',
   history: []
 };
+
+/**
+ * @internal
+ */
+function getAllNoteElements(): HTMLDivElement[] {
+  return Array.from(noteContainer.querySelectorAll('.note'));
+}
 
 /**
  * @internal
@@ -266,15 +272,13 @@ function onCanvasMouseDown(e: MouseEvent) {
   state.selectedNoteStartX = state.selectedNoteElement.offsetLeft;
   state.selectedNoteAction = 'resize';
 
-  noteElements.push(state.selectedNoteElement);
-
   setCursor('e-resize');
 }
 
 /**
  * @internal
  */
-function getNoteElementFromEvent(e: MouseEvent): HTMLDivElement {
+function getNoteElementFromMouseEvent(e: MouseEvent): HTMLDivElement {
   let element = e.target as HTMLDivElement;
 
   while (element.className !== 'note') {
@@ -303,7 +307,7 @@ function onNoteMouseDown(e: MouseEvent) {
     };
   }
 
-  const element = getNoteElementFromEvent(e);
+  const element = getNoteElementFromMouseEvent(e);
 
   if (!element) {
     return;
@@ -482,6 +486,8 @@ function onKeyUp(e: KeyboardEvent) {
 }
 
 /**
+ * @todo This is barely functional, and needs to be implemented further.
+ *
  * @internal
  */
 function undoLastAction() {
@@ -495,12 +501,10 @@ function undoLastAction() {
       state.sequence.removeNoteFromChannel(channelId, noteId);
 
       // @todo cleanup (e.g. removeNoteElement())
-      if (noteElements.length > 0) {
-        const element = findNoteElement(channelId, noteId);
-        const index = noteElements.findIndex(noteElement => noteElement === element);
+      const element = findNoteElement(channelId, noteId);
 
+      if (element) {
         element.remove();
-        noteElements.splice(index, 1);
       }
 
       break;
@@ -667,6 +671,8 @@ export function init() {
     noteContainer.classList.add('playing');
     playBar.classList.add('visible');
 
+    const noteElements = getAllNoteElements();
+
     for (const element of noteElements) {
       updateNoteElementProgress(element, 0);
     }
@@ -679,6 +685,8 @@ export function init() {
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
 
+    const noteElements = getAllNoteElements();
+
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
     }
@@ -690,6 +698,8 @@ export function init() {
 
     noteContainer.classList.remove('playing');
     playBar.classList.remove('visible');
+
+    const noteElements = getAllNoteElements();
 
     for (const element of noteElements) {
       updateNoteElementProgress(element, 1);
