@@ -4,8 +4,8 @@ import * as audio from './audio';
 import { samples } from './samples';
 
 type WebAudioNode = OscillatorNode | AudioBufferSourceNode
-type SequenceEventHandler = (note?: SequenceNote) => void
-type SequenceEvent = 'play' | 'stop' | 'ended' | 'note-start' | 'note-end'
+type SequenceEventHandler<D> = (data?: D) => void
+type SequenceEvent = 'play' | 'stop' | 'ended' | 'note-start' | 'note-end' | 'create-channel'
 
 // @todo use a non-repeatable ID generator
 const generateChannelId = () => Math.random().toString().split('.')[1];
@@ -49,7 +49,7 @@ export default class Sequence {
   private channels: Channel[] = [];
   private queuedNodes: WebAudioNode[] = [];
   private pendingNotes: SequenceNote[] = [];
-  private events: Record<string, SequenceEventHandler[]> = {};
+  private events: Record<string, SequenceEventHandler<any>[]> = {};
   private playing = false;
   private playStartTime = 0;
 
@@ -58,6 +58,7 @@ export default class Sequence {
 
     channel.notes.push(note);
 
+    this.callEventHandlers('create-channel', channel);
     this.sortChannelNotes(channelId);
   }
 
@@ -89,7 +90,7 @@ export default class Sequence {
     _reverbGain.gain.setValueAtTime(0, sound._startTime);
     _reverbGain.gain.linearRampToValueAtTime(config.reverb, sound._startTime + adjustedAttack);
 
-    if (config.reverb > 0 && config.release > 0 && sound._endTime > 0) {      
+    if (config.reverb > 0 && config.release > 0 && sound._endTime > 0) {
       // Release (reverb)
       sound._reverbGain.gain.setValueAtTime(config.reverb, sound._endTime);
       sound._reverbGain.gain.linearRampToValueAtTime(0, sound._endTime + config.release);
@@ -149,7 +150,13 @@ export default class Sequence {
     return this.playing;
   }
 
-  public on(event: SequenceEvent, handler: SequenceEventHandler) {
+  public on(event: 'play', handler: SequenceEventHandler<void>): void;
+  public on(event: 'stop', handler: SequenceEventHandler<void>): void;
+  public on(event: 'ended', handler: SequenceEventHandler<void>): void;
+  public on(event: 'note-start', handler: SequenceEventHandler<SequenceNote>): void;
+  public on(event: 'note-end', handler: SequenceEventHandler<SequenceNote>): void;
+  public on(event: 'create-channel', handler: SequenceEventHandler<Channel>): void;
+  public on(event: SequenceEvent, handler: SequenceEventHandler<any>) {
     if (!this.events[event]) {
       this.events[event] = [];
     }
@@ -264,7 +271,13 @@ export default class Sequence {
     }
   }
 
-  private callEventHandlers(event: SequenceEvent, note?: SequenceNote): void {
-    this.events[event]?.forEach(handler => handler(note));
+  private callEventHandlers(event: 'play'): void;
+  private callEventHandlers(event: 'stop'): void;
+  private callEventHandlers(event: 'ended'): void;
+  private callEventHandlers(event: 'note-start', note: SequenceNote): void;
+  private callEventHandlers(event: 'note-end', note: SequenceNote): void;
+  private callEventHandlers(event: 'create-channel', channel: Channel): void;
+  private callEventHandlers(event: SequenceEvent, data?: any): void {
+    this.events[event]?.forEach(handler => handler(data));
   }
 }

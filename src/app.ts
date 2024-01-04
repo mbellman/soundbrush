@@ -1,6 +1,7 @@
 import Sequence, { SequenceNote } from './Sequence';
 import * as audio from './audio';
 import * as visuals from './visuals';
+import * as measures from './measures';
 import type { BrushStroke } from './visuals';
 import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
@@ -19,14 +20,12 @@ let playBar: HTMLDivElement = null;
  */
 const brushStrokeMap: Record<string | number, BrushStroke> = {};
 
-// @todo move to core
 const settings: Settings = {
   divisions: 25,
   microtonal: false,
   useSnapping: true
 };
 
-// @todo move to core
 const state: State = {
   activeChannelId: null,
   scroll: { x: 0, y: 0 },
@@ -807,8 +806,10 @@ export function init() {
   {
     const { sequence } = state;
 
+    document.body.appendChild(measures.createMeasureRoll());
+
     // @todo don't do this silly event propagation thing;
-    // refactor state management stuff into core
+    // pass state into createChannelManager()
     const channelManager = createChannelManager({
       onChannelPanelAdded: panel => {
         const channelName = `Channel ${sequence.getChannels().length + 1}`;
@@ -822,6 +823,8 @@ export function init() {
         focusNotesByChannelId(channel.id);
 
         state.activeChannelId = channel.id;
+
+        measures.respawnMeasureBlocks(state);
       },
       onChangeChannelName: name => {
         const activeChannel = sequence.findChannel(state.activeChannelId);
@@ -833,6 +836,8 @@ export function init() {
       },
       onChannelPanelSelected: panel => {
         state.activeChannelId = panel.getAttribute('data-channelId');
+
+        measures.respawnMeasureBlocks(state);
 
         focusNotesByChannelId(state.activeChannelId);
       }
