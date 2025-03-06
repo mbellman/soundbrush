@@ -23,6 +23,7 @@ export interface SequenceNote {
 
 export interface ChannelConfig {
   wave: WaveForm
+  volume: number,
   attack: number
   release: number
   reverb: number
@@ -40,6 +41,7 @@ export interface Channel {
 
 const DEFAULT_CHANNEL_CONFIG: ChannelConfig = {
   wave: [ ...samples.square ],
+  volume: 1,
   attack: 0,
   release: 0,
   reverb: 0
@@ -68,6 +70,8 @@ export default class Sequence {
     const { _gain, _reverbGain } = sound;
     const duration = sound._endTime < 0 ? 1 : sound._endTime - sound._startTime;
     const adjustedAttack = Math.min(5 * config.attack, duration);
+    const adjustedVolume = Math.pow(config.volume, 3);
+    const peakVolume = (1 - config.reverb) * adjustedVolume;
 
     if (sound._endTime > 0) {
       sound.node.stop(sound._endTime + config.release);
@@ -78,21 +82,21 @@ export default class Sequence {
 
     // Attack (main)
     _gain.gain.setValueAtTime(0, sound._startTime);
-    _gain.gain.linearRampToValueAtTime((1 - config.reverb), sound._startTime + adjustedAttack);
+    _gain.gain.linearRampToValueAtTime(peakVolume, sound._startTime + adjustedAttack);
 
     if (config.release > 0 && sound._endTime > 0) {
       // Release (main)
-      _gain.gain.linearRampToValueAtTime((1 - config.reverb), sound._endTime);
+      _gain.gain.linearRampToValueAtTime(peakVolume, sound._endTime);
       _gain.gain.linearRampToValueAtTime(0, sound._endTime + config.release);
     }
 
     // Attack (reverb)
     _reverbGain.gain.setValueAtTime(0, sound._startTime);
-    _reverbGain.gain.linearRampToValueAtTime(config.reverb, sound._startTime + adjustedAttack);
+    _reverbGain.gain.linearRampToValueAtTime(config.reverb * adjustedVolume, sound._startTime + adjustedAttack);
 
     if (config.reverb > 0 && config.release > 0 && sound._endTime > 0) {
       // Release (reverb)
-      sound._reverbGain.gain.setValueAtTime(config.reverb, sound._endTime);
+      sound._reverbGain.gain.setValueAtTime(config.reverb * adjustedVolume, sound._endTime);
       sound._reverbGain.gain.linearRampToValueAtTime(0, sound._endTime + config.release);
     }
   }

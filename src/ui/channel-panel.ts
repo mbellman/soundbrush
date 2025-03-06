@@ -122,6 +122,8 @@ export function createChannelPanel(config: ChannelPanelConfig) {
     }
   });
 
+  // root.addEventListener('mousemove', e => e.stopPropagation());
+
   root.addEventListener('mouseenter', () => {
     if (isCollapsed()) {
       // @todo ui.setChannelOpacity(channelId, 0.5)
@@ -141,6 +143,12 @@ export function createChannelPanel(config: ChannelPanelConfig) {
       noteContainer.style.opacity = '0.2';
     }
   });
+
+  root.appendChild(createSlider({
+    label: 'Volume',
+    defaultValue: 1,
+    onChange: volume => config.onChangeChannelConfig({ volume })
+  }));
 
   root.appendChild(createSlider({
     label: 'Attack',

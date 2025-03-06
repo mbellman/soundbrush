@@ -1,3 +1,13 @@
+@keyframes reveal-knob {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 .slider {
   margin: 5px 0;
   position: relative;
@@ -28,6 +38,7 @@
   }
 
   &--knob {
+    animation: reveal-knob 0.2s;
     background-color: #88a;
     border-radius: 50%;
     cursor: grab;

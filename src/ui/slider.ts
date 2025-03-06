@@ -1,10 +1,11 @@
-import { clamp } from '../utilities';
+import { clamp, lerp } from '../utilities';
 import { createTemplate, createWidget } from './create-widget';
 import './slider.scss';
 
 interface SliderConfig {
   label: string
   onChange: (value: number) => void
+  defaultValue?: number
 }
 
 export function createSlider(config: SliderConfig) {
@@ -46,6 +47,17 @@ export function createSlider(config: SliderConfig) {
   });
 
   document.addEventListener('mouseup', () => dragging = false);
+
+  setTimeout(() => {
+    const barBounds = bar.getBoundingClientRect();
+    const knobBounds = knob.getBoundingClientRect();
+    const min = 0;
+    const max = barBounds.width - knobBounds.width;
+    const defaultX = lerp(min, max, config.defaultValue || 0);
+
+    knob.style.transform = `translateX(${defaultX}px) translateY(-14px)`;
+    knob.style.opacity = '1';
+  }, 20);
 
   return root;
 }

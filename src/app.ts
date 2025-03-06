@@ -556,10 +556,12 @@ function createPlayBar(): HTMLDivElement {
  * @internal
  */
 function focusNotesByChannelId(channelId: string) {
+  // Fade out all other channel notes
   Array.from(noteContainer.children).forEach((child: HTMLElement) => {
-    child.style.opacity = '0.2';
+    child.style.opacity = '0.1';
   });
 
+  // Fade in active channel notes
   (noteContainer.querySelector(`[data-channelId="${channelId}"]`) as HTMLElement).style.opacity = '1';
 }
 

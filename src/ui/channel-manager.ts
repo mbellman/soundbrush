@@ -46,7 +46,7 @@ export function createChannelManager({
       name: 'Channel ...',
       onExpand: expandChannel,
       onChangeChannelName,
-      onChangeChannelConfig      
+      onChangeChannelConfig
     });
 
     list.appendChild(panel);

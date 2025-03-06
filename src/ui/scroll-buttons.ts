@@ -10,8 +10,22 @@ export function createScrollButtons(state: State) {
     </div>
   `);
 
+  function showLeftButton() {
+    left.style.opacity = '1';
+    left.style.pointerEvents = 'all';
+  }
+
+  function hideLeftButton() {
+    left.style.opacity = '0';
+    left.style.pointerEvents = 'none';
+  }
+
   left.addEventListener('click', () => {
     state.targetScroll.x = Math.max(0, state.targetScroll.x - 500);
+
+    if (state.targetScroll.x === 0) {
+      hideLeftButton();
+    }
 
     (document.activeElement as HTMLButtonElement).blur();    
   });
@@ -19,8 +33,12 @@ export function createScrollButtons(state: State) {
   right.addEventListener('click', () => {
     state.targetScroll.x += 500;
 
+    showLeftButton();
+
     (document.activeElement as HTMLButtonElement).blur();    
   });
+
+  hideLeftButton();
 
   return root;
 }
