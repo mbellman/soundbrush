@@ -1,5 +1,5 @@
 import { drawCircle } from './canvas';
-import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
+import { DEFAULT_BEAT_LENGTH, DEFAULT_HALF_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, FADE_OUT_TIME, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
 import { clamp, lerp, mod, timeSince } from './utilities';
 
@@ -235,7 +235,7 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
   const opacity = (0.2 + 0.1 * Math.sin(Date.now() / 200)) * (isHoveringOverNoteCanvas ? 1 : 0.1);
 
   const targetX = settings.useSnapping
-    ? Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x
+    ? Math.floor((scroll.x + mouse.x) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x
     : mouse.x;
 
   const targetY = settings.microtonal

@@ -3,7 +3,7 @@ import * as audio from './audio';
 import * as visuals from './visuals';
 import * as measures from './measures';
 import type { BrushStroke } from './visuals';
-import { DEFAULT_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
+import { DEFAULT_BEAT_LENGTH, DEFAULT_HALF_BEAT_LENGTH, DEFAULT_NOTE_LENGTH, MIDDLE_NOTE } from './constants';
 import { Settings, State, Vec2 } from './types';
 import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
@@ -247,7 +247,7 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   const offset = (
     settings.useSnapping
-      ? (Math.floor((scroll.x + mouse.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH - scroll.x) / 400
+      ? (Math.floor((scroll.x + mouse.x) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x) / 400
       : mouse.x / 400
   ) + state.scroll.x / 400;
 
@@ -355,7 +355,7 @@ function onMouseMove(e: MouseEvent) {
     // @todo cleanup
     const { selectedNoteElement } = state;
     const { left, top, bottom } = selectedNoteElement.getBoundingClientRect();
-    const baseNoteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+    const baseNoteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH / 2 : DEFAULT_NOTE_LENGTH;
     const baseRightEdge = left + baseNoteLength;
 
     if (
@@ -384,7 +384,7 @@ function onMouseMove(e: MouseEvent) {
         selectedNoteElement.style.width = `${noteLength}px`;
       } else if (state.selectedNoteAction === 'move') {
         const targetX = settings.useSnapping
-          ? Math.round((state.selectedNoteStartX + totalDelta.x) / DEFAULT_BEAT_LENGTH) * DEFAULT_BEAT_LENGTH
+          ? Math.round((state.selectedNoteStartX + totalDelta.x) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH
           : state.mouse.x;
 
         selectedNoteElement.style.left = `${targetX}px`;

@@ -1,5 +1,5 @@
 # soundbrush
-Draw things and make music.
+A visually striking music sequencer.
 
 ## todo
 
