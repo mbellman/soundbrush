@@ -77,6 +77,7 @@ function syncNoteElement(channelId: string, noteId: string) {
     element.style.top = `${yOffset}px`;
     element.style.left = `${xOffset}px`;
     element.style.width = `${sequenceNote.duration * 400}px`;
+    element.style.height = `${noteBarHeight - 10}px`;
     element.style.backgroundColor = colorString;
     element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
@@ -568,10 +569,14 @@ function focusNotesByChannelId(channelId: string) {
   // Fade out all other channel notes
   Array.from(noteContainer.children).forEach((child: HTMLElement) => {
     child.style.opacity = '0.1';
+    child.style.pointerEvents = 'none';
   });
 
   // Fade in active channel notes
-  (noteContainer.querySelector(`[data-channelId="${channelId}"]`) as HTMLElement).style.opacity = '1';
+  const activeChannelContainer = (noteContainer.querySelector(`[data-channelId="${channelId}"]`) as HTMLElement);
+
+  activeChannelContainer.style.opacity = '1';
+  activeChannelContainer.style.pointerEvents = 'all';
 }
 
 /**
@@ -866,27 +871,54 @@ export function init() {
 
     const scrollButtons = createScrollButtons(state);
 
-    // @todo put in a proper UI widget somewhere
-    // @todo fix incorrect bpm label
-    const tempoSlider = createSlider({
-      label: 'Tempo (140)',
-      defaultValue: 0.4,
-      onChange: value => {
-        const newTempo = 100 + Math.round(value * 100);
-
-        sequence.setTempo(newTempo);
-
-        tempoSlider.querySelector('.slider--label').textContent = `Tempo (${newTempo})`;
-      }
-    });
-
-    tempoSlider.style.position = 'fixed';
-    tempoSlider.style.top = '20px';
-    tempoSlider.style.right = '20px';
-    tempoSlider.style.width = '200px';
-
     document.body.appendChild(channelManager);
     document.body.appendChild(scrollButtons);
-    document.body.appendChild(tempoSlider);
+
+    {
+      // @todo put in a proper UI widget somewhere
+      // @todo fix incorrect bpm label
+      const tempoSlider = createSlider({
+        label: 'Tempo (140)',
+        defaultValue: 0.4,
+        onChange: value => {
+          const newTempo = 100 + Math.round(value * 100);
+  
+          sequence.setTempo(newTempo);
+  
+          tempoSlider.querySelector('.slider--label').textContent = `Tempo (${newTempo})`;
+        }
+      });
+  
+      tempoSlider.style.position = 'fixed';
+      tempoSlider.style.top = '20px';
+      tempoSlider.style.right = '20px';
+      tempoSlider.style.width = '200px';
+
+      document.body.appendChild(tempoSlider);
+    }
+
+    {
+      // @todo put in a proper UI widget somewhere
+      const divisionsSlider = createSlider({
+        label: 'Vertical scale',
+        defaultValue: 0,
+        onChange: value => {
+          settings.divisions = 25 + Math.round(value * 25);
+
+          for (const channel of sequence.getChannels()) {
+            for (const note of channel.notes) {
+              syncNoteElement(channel.id, note.noteId);
+            }
+          }
+        }
+      });
+  
+      divisionsSlider.style.position = 'fixed';
+      divisionsSlider.style.top = '70px';
+      divisionsSlider.style.right = '20px';
+      divisionsSlider.style.width = '200px';
+
+      document.body.appendChild(divisionsSlider);
+    }
   }
 }

@@ -110,7 +110,7 @@ export default class Sequence {
     const channel: Channel = {
       id: generateChannelId(),
       name,
-      config: DEFAULT_CHANNEL_CONFIG,
+      config: { ...DEFAULT_CHANNEL_CONFIG },
       fx: {
         reverb: audio.createReverb()
       },
@@ -127,6 +127,50 @@ export default class Sequence {
       ...note,
       noteId: generateNoteId()
     };
+  }
+
+  public static deserialize(data: string): Sequence {
+    const sequence = new Sequence();
+    const channelBlocks = data.split('@');
+
+    for (const block of channelBlocks) {
+      if (block.length === 0) {
+        continue;
+      }
+
+      const [attributes, notes] = block.split('~');
+      const [name, wave, volume, attack, release, reverb] = attributes.split('!');
+      const channel = sequence.createChannel(name);
+
+      channel.config = {
+        wave: wave.split(',').map(Number),
+        volume: Number(volume),
+        attack: Number(attack),
+        release: Number(release),
+        reverb: Number(reverb)
+      };
+
+      const noteBlocks = notes.split('_');
+
+      for (const block of noteBlocks) {
+        if (block.length === 0) {
+          continue;
+        }
+
+        const [note, offset, duration] = block.split('!').map(Number);
+
+        const sequenceNote = sequence.createNote({
+          note,
+          offset,
+          duration,
+          channelId: channel.id
+        });
+
+        sequence.addNoteToChannel(channel.id, sequenceNote);
+      }
+    }
+
+    return sequence;
   }
 
   public getChannels(): Channel[] {
@@ -235,6 +279,24 @@ export default class Sequence {
 
       channel.notes.splice(index, 1);
     }
+  }
+
+  public serialize(): string {
+    let data = '';
+
+    for (const channel of this.channels) {
+      const { name, config: { wave, volume, attack, release, reverb} } = channel;
+
+      data += `${name}!${wave.toString()}!${volume}!${attack}!${release}!${reverb}~`;
+
+      for (const note of channel.notes) {
+        data += `${note.note}!${note.offset}!${note.duration}_`;
+      }
+
+      data += '@';
+    }
+
+    return data;
   }
 
   public setTempo(value: number): void {
