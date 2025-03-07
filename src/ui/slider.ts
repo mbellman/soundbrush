@@ -48,6 +48,7 @@ export function createSlider(config: SliderConfig) {
 
   document.addEventListener('mouseup', () => dragging = false);
 
+  // @todo factor
   setTimeout(() => {
     const barBounds = bar.getBoundingClientRect();
     const knobBounds = knob.getBoundingClientRect();
@@ -57,6 +58,10 @@ export function createSlider(config: SliderConfig) {
 
     knob.style.transform = `translateX(${defaultX}px) translateY(-14px)`;
     knob.style.opacity = '1';
+
+    const value = defaultX / (barBounds.width - knobBounds.width);
+
+    fill.style.width = `${value * 100}%`;
   }, 20);
 
   return root;

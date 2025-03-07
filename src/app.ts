@@ -775,6 +775,7 @@ export function init() {
       noteContainer.style.transform = `translateX(${-state.scroll.x}px) translateY(${state.scroll.y}px)`;
     }
 
+    // @todo visuals.render()
     visuals.clearScreen(canvas, ctx);
     visuals.drawNoteBars(ctx, state, settings);
     visuals.drawBeatLines(ctx, state, settings);

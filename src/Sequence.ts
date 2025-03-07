@@ -54,6 +54,9 @@ export default class Sequence {
   private events: Record<string, SequenceEventHandler<any>[]> = {};
   private playing = false;
   private playStartTime = 0;
+  // @todo this represents the 'default' tempo but does not
+  // necessarily play at 180bpm. That should be corrected!
+  private tempo = 180;
 
   public addNoteToChannel(channelId: string, note: SequenceNote): void {
     const channel = this.findChannel(channelId) || this.createChannel('Test Channel');
@@ -147,7 +150,11 @@ export default class Sequence {
   }
 
   public getPlayOffsetTime(): number {
-    return audio.getContext().currentTime - this.playStartTime;
+    return (audio.getContext().currentTime - this.playStartTime) / this.getRateMultiplier();
+  }
+
+  public getRateMultiplier(): number {
+    return 180.0 / this.tempo;
   }
 
   public isPlaying(): boolean {
@@ -175,6 +182,7 @@ export default class Sequence {
     this.playStartTime = audio.getContext().currentTime;
 
     const { currentTime } = audio.getContext();
+    const rate = this.getRateMultiplier();
     let lastNode: WebAudioNode;
     let highestNoteEnd = 0;
 
@@ -184,10 +192,10 @@ export default class Sequence {
 
       for (const sequenceNote of chunkNotes) {
         const { note, offset, duration } = sequenceNote;
-        const sound = audio.createSound(channel.config.wave, note, offset);
-        const stopTime = currentTime + offset + duration;
+        const sound = audio.createSound(channel.config.wave, note, rate * offset);
+        const endTime = currentTime + rate * offset + rate * duration;
 
-        sound._endTime = stopTime;
+        sound._endTime = endTime;
 
         this.applyChannelFx(sound, channel);
 
