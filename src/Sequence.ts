@@ -237,6 +237,10 @@ export default class Sequence {
     }
   }
 
+  public setTempo(value: number): void {
+    this.tempo = value;
+  }
+
   public sortChannelNotes(channelId: string): void {
     const channel = this.findChannel(channelId);
 

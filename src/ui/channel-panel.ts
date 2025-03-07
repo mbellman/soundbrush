@@ -152,7 +152,7 @@ export function createChannelPanel(config: ChannelPanelConfig) {
 
   root.appendChild(createSlider({
     label: 'Attack',
-    onChange: attack => config.onChangeChannelConfig({ attack })
+    onChange: attack => config.onChangeChannelConfig({ attack: Math.pow(attack, 3) })
   }));
 
   root.appendChild(createSlider({

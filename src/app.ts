@@ -9,6 +9,7 @@ import { lerp, mod } from './utilities';
 import { createCanvas } from './canvas';
 import { createChannelManager } from './ui/channel-manager';
 import { createScrollButtons } from './ui/scroll-buttons';
+import { createSlider } from './ui/slider';
 
 let noteContainer: HTMLDivElement = null;
 const activeNoteElements: HTMLDivElement[] = [];
@@ -780,12 +781,21 @@ export function init() {
       state.scroll.x = lerp(state.scroll.x, state.targetScroll.x, dt * 5);
       state.scroll.y = lerp(state.scroll.y, state.targetScroll.y, dt * 5);
 
+      if (Math.abs(state.scroll.y - state.targetScroll.y) < 0.1) {
+        // Lock scroll position to target when the delta is small enough
+        state.scroll.y = state.targetScroll.y;
+      }
+
       noteContainer.style.transform = `translateX(${-state.scroll.x}px) translateY(${state.scroll.y}px)`;
     }
 
     // @todo visuals.render()
     visuals.clearScreen(canvas, ctx);
-    visuals.drawNoteBars(ctx, state, settings);
+
+    if (!state.sequence.isPlaying()) {
+      visuals.drawNoteBars(ctx, state, settings);
+    }
+
     visuals.drawBeatLines(ctx, state, settings);
     visuals.drawBrushStrokes(ctx, state);
     visuals.drawSparkles(ctx, state);
@@ -855,8 +865,28 @@ export function init() {
     });
 
     const scrollButtons = createScrollButtons(state);
-  
+
+    // @todo put in a proper UI widget somewhere
+    // @todo fix incorrect bpm label
+    const tempoSlider = createSlider({
+      label: 'Tempo (140)',
+      defaultValue: 0.4,
+      onChange: value => {
+        const newTempo = 100 + Math.round(value * 100);
+
+        sequence.setTempo(newTempo);
+
+        tempoSlider.querySelector('.slider--label').textContent = `Tempo (${newTempo})`;
+      }
+    });
+
+    tempoSlider.style.position = 'fixed';
+    tempoSlider.style.top = '20px';
+    tempoSlider.style.right = '20px';
+    tempoSlider.style.width = '200px';
+
     document.body.appendChild(channelManager);
     document.body.appendChild(scrollButtons);
+    document.body.appendChild(tempoSlider);
   }
 }
