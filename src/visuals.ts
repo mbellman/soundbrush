@@ -242,7 +242,11 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
     ? mouse.y - noteElementHeight / 2
     : Math.floor((mouse.y - scrollRemainder) / barHeight) * barHeight + scrollRemainder + 5;
 
-  const noteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+  const noteLength =
+    settings.useSnapping
+      ? state.useHalfBeatNote ? DEFAULT_HALF_BEAT_LENGTH : DEFAULT_BEAT_LENGTH
+      : DEFAULT_NOTE_LENGTH;
+
   const x = lerp(lastNotePreviewX, targetX, 0.25);
   const y = lerp(lastNotePreviewY, targetY, 0.25);
 

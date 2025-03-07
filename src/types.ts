@@ -25,6 +25,7 @@ export interface State {
   running: boolean
   mousedown: boolean
   playing: boolean
+  useHalfBeatNote: boolean
   mouse: Vec2
   dragStart: Vec2
   hoverTarget: EventTarget

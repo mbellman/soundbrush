@@ -33,6 +33,7 @@ const state: State = {
   running: true,
   mousedown: false,
   playing: false,
+  useHalfBeatNote: false,
   mouse: { x: 0, y: 0 },
   dragStart: { x: 0, y: 0 },
   hoverTarget: null,
@@ -213,7 +214,8 @@ function startCurrentChannelSound(): void {
 
   const sound = audio.startNewSound(currentChannel.config.wave, 0);
 
-  state.sequence.applyChannelFx(sound, currentChannel);
+  // Reduce the volume for placing/selecting notes
+  sound._gain.gain.setValueAtTime(0.02, audio.getContext().currentTime + 0.01);
 }
 
 /**
@@ -251,7 +253,11 @@ function onCanvasMouseDown(e: MouseEvent) {
       : mouse.x / 400
   ) + state.scroll.x / 400;
 
-  const duration = (settings.useSnapping ? DEFAULT_BEAT_LENGTH : DEFAULT_NOTE_LENGTH) / 400;
+  const duration = (
+    settings.useSnapping
+      ? (state.useHalfBeatNote ? DEFAULT_HALF_BEAT_LENGTH : DEFAULT_BEAT_LENGTH)
+      : DEFAULT_NOTE_LENGTH
+  ) / 400;
 
   const sequenceNote = sequence.createNote({
     note,
@@ -355,8 +361,8 @@ function onMouseMove(e: MouseEvent) {
     // @todo cleanup
     const { selectedNoteElement } = state;
     const { left, top, bottom } = selectedNoteElement.getBoundingClientRect();
-    const baseNoteLength = settings.useSnapping ? DEFAULT_BEAT_LENGTH / 2 : DEFAULT_NOTE_LENGTH;
-    const baseRightEdge = left + baseNoteLength;
+    const smallestNoteLength = settings.useSnapping ? DEFAULT_HALF_BEAT_LENGTH : DEFAULT_NOTE_LENGTH;
+    const baseRightEdge = left + smallestNoteLength;
 
     if (
       state.mouse.x < left ||
@@ -375,10 +381,10 @@ function onMouseMove(e: MouseEvent) {
       // visuals.saveDrawPoint(state.mouse.x, state.mouse.y, visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
       const dragOverflow = settings.useSnapping
-        ? Math.round(overflow / baseNoteLength) * baseNoteLength
+        ? Math.round(overflow / smallestNoteLength) * smallestNoteLength
         : overflow;
 
-      const noteLength = Math.max(baseNoteLength, baseNoteLength + dragOverflow);
+      const noteLength = Math.max(smallestNoteLength, smallestNoteLength + dragOverflow);
 
       if (state.selectedNoteAction === 'resize') {
         selectedNoteElement.style.width = `${noteLength}px`;
@@ -422,6 +428,8 @@ function onMouseUp(e: MouseEvent) {
     selectedNoteElement.style.transform = 'scaleY(1)';
 
     syncNoteProperties(selectedNoteElement);
+
+    state.useHalfBeatNote = selectedNoteElement.clientWidth <= DEFAULT_HALF_BEAT_LENGTH;
   }
 
   setCursor('pointer');
