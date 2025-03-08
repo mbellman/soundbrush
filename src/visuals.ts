@@ -235,7 +235,7 @@ export function drawNotePreview(ctx: CanvasRenderingContext2D, state: State, set
   const opacity = (0.2 + 0.1 * Math.sin(Date.now() / 200)) * (isHoveringOverNoteCanvas ? 1 : 0.1);
 
   const targetX = settings.useSnapping
-    ? Math.floor((scroll.x + mouse.x) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x
+    ? Math.floor((scroll.x + mouse.x - 8) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x
     : mouse.x;
 
   const targetY = settings.microtonal

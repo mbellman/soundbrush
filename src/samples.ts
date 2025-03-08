@@ -14,7 +14,8 @@ export const samples = {
   square: [
     ...new Array(50).fill(1),
     ...new Array(50).fill(-1)
-  ] as WaveForm
+  ] as WaveForm,
+  triangle: createSampleWaveForm(100, x => x < 50 ? x / 50 : 1 - (x - 50) / 50)
 };
 
 export type Instrument = keyof typeof samples;

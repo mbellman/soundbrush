@@ -77,7 +77,7 @@ function syncNoteElement(channelId: string, noteId: string) {
     element.style.top = `${yOffset}px`;
     element.style.left = `${xOffset}px`;
     element.style.width = `${sequenceNote.duration * 400}px`;
-    element.style.height = `${noteBarHeight - 10}px`;
+    element.style.height = `${elementHeight}px`;
     element.style.backgroundColor = colorString;
     element.style.border = `2px solid ${colorString}`;
     element.style.boxShadow = `0 0 10px 0 ${colorString}`;
@@ -217,7 +217,7 @@ function startCurrentChannelSound(): void {
   const sound = audio.startNewSound(currentChannel.config.wave, 0);
 
   // Reduce the volume for placing/selecting notes
-  sound._gain.gain.setValueAtTime(0.02, audio.getContext().currentTime + 0.01);
+  sound._gain.gain.setValueAtTime(0.01, audio.getContext().currentTime + 0.01);
 }
 
 /**
@@ -251,7 +251,7 @@ function onCanvasMouseDown(e: MouseEvent) {
 
   const offset = (
     settings.useSnapping
-      ? (Math.floor((scroll.x + mouse.x) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x) / 400
+      ? (Math.floor((scroll.x + mouse.x - 8) / DEFAULT_HALF_BEAT_LENGTH) * DEFAULT_HALF_BEAT_LENGTH - scroll.x) / 400
       : mouse.x / 400
   ) + state.scroll.x / 400;
 
@@ -383,7 +383,7 @@ function onMouseMove(e: MouseEvent) {
       // visuals.saveDrawPoint(state.mouse.x, state.mouse.y, visuals.noteToColor(note + (settings.microtonal ? 0.5 : 0)));
 
       const dragOverflow = settings.useSnapping
-        ? Math.round(overflow / smallestNoteLength) * smallestNoteLength
+        ? Math.ceil(overflow / smallestNoteLength) * smallestNoteLength
         : overflow;
 
       const noteLength = Math.max(smallestNoteLength, smallestNoteLength + dragOverflow);

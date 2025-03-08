@@ -285,7 +285,7 @@ export default class Sequence {
     let data = '';
 
     for (const channel of this.channels) {
-      const { name, config: { wave, volume, attack, release, reverb} } = channel;
+      const { name, config: { wave, volume, attack, release, reverb } } = channel;
 
       data += `${name}!${wave.toString()}!${volume}!${attack}!${release}!${reverb}~`;
 
